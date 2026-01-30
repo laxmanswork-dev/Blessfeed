@@ -49,11 +49,10 @@ This design prioritizes privacy, simplicity, and intentional UX over feature cou
 
 ## Live Demo
 
-Frontend:
-https://blessfeed.vercel.app
+https://blessfeed-1.onrender.com
 
-Backend API:
-https://blessfeed.onrender.com
+(The frontend is deployed as a static site and communicates with a separately deployed Node.js backend API.)
+
 
 ## What This Project Demonstrates
 
