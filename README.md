@@ -1,16 +1,64 @@
-# React + Vite
+# Blessfeed
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Blessfeed is a minimal, privacy-first emotional stabilization app built with the MERN stack.
+It helps users pause, regulate emotional intensity, and release mental pressure without accounts, tracking, or stored personal data.
 
-Currently, two official plugins are available:
+## Purpose
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+The goal of Blessfeed is to create a calm, low-friction space for emotional regulation.
+The app avoids social feeds, notifications, and identity-based features to reduce cognitive load and protect user privacy.
 
-## React Compiler
+## How the App Works
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+1. Resonance  
+   The user sets their current emotional intensity.
+   This action starts an anonymous session on the backend.
 
-## Expanding the ESLint configuration
+2. Circle (Real-Time Presence)  
+   Users can tap into a shared pulse using WebSockets.
+   There is no chat or identity — only real-time presence.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+3. Feed (Zero-Data Release)  
+   Users can release a thought.
+   The text is processed momentarily on the server and immediately discarded.
+   Only a derived signal is stored, never the content.
+
+4. Breathe  
+   A guided breathing interaction tied to the session state.
+
+## Architecture
+
+Frontend:
+- React + Vite
+- Framer Motion for animation
+- Socket.io client for real-time events
+
+Backend:
+- Node.js + Express
+- MongoDB for anonymous session metadata
+- Socket.io for real-time presence
+- REST APIs for session lifecycle
+
+## Why There Is No Authentication
+
+Authentication is intentionally excluded.
+Users can open the app and begin immediately without creating accounts or sharing identity.
+
+Each session is anonymous and short-lived.
+This design prioritizes privacy, simplicity, and intentional UX over feature count.
+
+## Live Demo
+
+Frontend:
+https://blessfeed.vercel.app
+
+Backend API:
+https://blessfeed.onrender.com
+
+## What This Project Demonstrates
+
+- Full-stack MERN development
+- Clean API and session lifecycle design
+- Real-time systems using WebSockets
+- Privacy-first architecture decisions
+- Product thinking beyond basic CRUD apps
