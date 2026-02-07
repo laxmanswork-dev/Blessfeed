@@ -1,8 +1,22 @@
-const express = require('express');
-const router = express.Router();
-const { startSession, releaseFeed } = require('../controllers/session.controller');
+import { Router } from "express";
+import authMiddleware from "../auth_middleware.js";
 
-router.post('/start', startSession);
-router.post('/release', releaseFeed);
+const router = Router();
 
-module.exports = router;
+/* PUBLIC */
+router.get("/ping", (req, res) => {
+  res.json({
+    status: "ok",
+    message: "Session route working",
+  });
+});
+
+/* PROTECTED */
+router.get("/secure-test", authMiddleware, (req, res) => {
+  res.json({
+    message: "Protected route working",
+    userId: req.userId,
+  });
+});
+
+export default router;

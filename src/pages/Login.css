@@ -1,0 +1,82 @@
+/* FULL SCREEN BACKGROUND */
+.login-bg {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at top, #1c2140, #05060f);
+  padding: 16px;
+}
+
+/* LOGIN CARD (MOBILE FIRST) */
+.login-card {
+  width: 100%;
+  max-width: 420px; /* 🔥 phone-sized even on desktop */
+  padding: 32px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  text-align: center;
+}
+
+/* BRAND */
+.brand {
+  letter-spacing: 4px;
+  color: #ffffff;
+  margin-bottom: 6px;
+}
+
+/* TAGLINE */
+.tagline {
+  font-size: 14px;
+  color: #b9c0ff;
+  margin-bottom: 28px;
+}
+
+/* INPUTS */
+.login-card input {
+  width: 100%;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  border-radius: 10px;
+  border: none;
+  outline: none;
+  background: rgba(255, 255, 255, 0.12);
+  color: white;
+  font-size: 14px;
+}
+
+.login-card input::placeholder {
+  color: #cfd3ff;
+}
+
+/* BUTTON */
+.login-card button {
+  width: 100%;
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #6b6bff, #8a8aff);
+  color: white;
+  font-size: 15px;
+  cursor: pointer;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.login-card button:hover {
+  transform: translateY(-1px);
+}
+
+.login-card button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ERROR */
+.error {
+  color: #ff6b6b;
+  font-size: 13px;
+  margin-top: 6px;
+}
