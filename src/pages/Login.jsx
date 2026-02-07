@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./Login.css";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
 export default function Login() {
   const navigate = useNavigate();
 
@@ -22,15 +24,15 @@ export default function Login() {
 
     try {
       const res = await axios.post(
-        "http://localhost:5000/api/auth/login",
+        `${API_URL}/api/auth/login`,
         { email, password },
         { headers: { "Content-Type": "application/json" } }
       );
 
-      // ✅ save JWT
+      // ✅ Save JWT
       localStorage.setItem("token", res.data.token);
 
-      // ✅ go to home
+      // ✅ Go to home
       navigate("/");
     } catch (err) {
       setError(err.response?.data?.message || "Invalid credentials");
