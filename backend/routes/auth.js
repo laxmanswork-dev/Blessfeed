@@ -1,12 +1,5 @@
-import express from "express";
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
-import User from "../models/User.js";
-
-const router = express.Router();
-
-// LOGIN
-router.post("/login", async (req, res) => {
+// REGISTER (PUBLIC)
+router.post("/register", async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -14,27 +7,23 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ message: "Email and password required" });
     }
 
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(401).json({ message: "Invalid credentials" });
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(409).json({ message: "User already exists" });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(401).json({ message: "Invalid credentials" });
-    }
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    const token = jwt.sign(
-      { id: user._id },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
-    );
+    const newUser = new User({
+      email,
+      password: hashedPassword,
+    });
 
-    res.json({ token });
+    await newUser.save();
+
+    res.status(201).json({ message: "User registered successfully" });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Registration failed" });
   }
 });
-
-export default router;
