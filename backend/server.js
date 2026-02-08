@@ -4,7 +4,9 @@ import cors from "cors";
 import dotenv from "dotenv";
 import http from "http";
 import { Server } from "socket.io";
+import passport from "passport";
 
+import "./passport.js";              // 🔥 PASSPORT CONFIG
 import authRoutes from "./routes/auth.js";
 
 dotenv.config();
@@ -44,6 +46,7 @@ app.use(
 );
 
 app.use(express.json());
+app.use(passport.initialize()); // 🔥 IMPORTANT LINE
 
 /* ================= HEALTH CHECK ================= */
 app.get("/health", (req, res) => {
