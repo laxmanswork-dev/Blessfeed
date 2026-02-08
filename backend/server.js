@@ -2,22 +2,42 @@ import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
+import http from "http";
+import { Server } from "socket.io";
 
 import authRoutes from "./routes/auth.js";
 
 dotenv.config();
 
 const app = express();
+const server = http.createServer(app);
+
+// SOCKET.IO
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"],
+  },
+});
+
+// SOCKET EVENTS
+io.on("connection", (socket) => {
+  console.log("🟢 Socket connected:", socket.id);
+
+  socket.on("disconnect", () => {
+    console.log("🔴 Socket disconnected:", socket.id);
+  });
+});
 
 // MIDDLEWARE
 app.use(cors({
   origin: "*",
   methods: ["GET", "POST"],
-  allowedHeaders: ["Content-Type", "Authorization"]
+  allowedHeaders: ["Content-Type", "Authorization"],
 }));
 app.use(express.json());
 
-// ✅ HEALTH CHECK (KEEP THIS FIRST)
+// HEALTH CHECK
 app.get("/health", (req, res) => {
   res.json({ status: "Backend OK" });
 });
@@ -25,15 +45,15 @@ app.get("/health", (req, res) => {
 // ROUTES
 app.use("/api/auth", authRoutes);
 
-// DB + SERVER START
+// START SERVER
 const PORT = process.env.PORT || 5000;
 
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
     console.log("✅ MongoDB connected");
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
+    server.listen(PORT, () => {
+      console.log(`🚀 Server + Socket running on port ${PORT}`);
     });
   })
   .catch((err) => {
