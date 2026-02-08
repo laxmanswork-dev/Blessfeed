@@ -5,7 +5,10 @@ import { Zap, Activity, Wind, Home as HomeIcon, BarChart3, User, Send, History, 
 import { io } from "socket.io-client";
 import { v4 as uuidv4 } from "uuid";
 
-const BACKEND_URL = "http://localhost:5000";
+const BACKEND_URL = "https://blessfeed-backend.onrender.com";
+
+/* 1️⃣ AUTH HELPER */
+const getToken = () => localStorage.getItem("token");
 
 const SOUND_MAP = {
   sync: "https://assets.mixkit.co/active_storage/sfx/900/900-preview.mp3",
@@ -120,8 +123,22 @@ const AuraCard = ({ icon: Icon, title, subtitle, children, activeColor, classNam
 /* ---------------- 💎 MAIN APPLICATION ---------------- */
 export default function BlessFeed() {
   const navigate = useNavigate();
+
+  /* 2️⃣ AUTH GUARD */
+  useEffect(() => {
+    const token = getToken();
+    if (!token) {
+      navigate("/login", { replace: true });
+    }
+  }, [navigate]);
+
   const [activeTab, setActiveTab] = useState("home");
-  const [localHistory, setLocalHistory] = useState([]);
+  const [localHistory, setLocalHistory] = useState(() => {
+    try {
+      const saved = localStorage.getItem("bless_history");
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) { return []; }
+  });
   const [isBreathing, setIsBreathing] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [timer, setTimer] = useState(120);
@@ -180,12 +197,17 @@ export default function BlessFeed() {
     }
   };
 
+  // Sync state to storage whenever localHistory changes
+  useEffect(() => {
+    localStorage.setItem("bless_history", JSON.stringify(localHistory));
+  }, [localHistory]);
+
   useEffect(() => {
     if (!isBreathing && activeTab === "home") {
-      const timer = setTimeout(() => {
+      const hapticTimer = setTimeout(() => {
         if ("vibrate" in navigator) navigator.vibrate([10, 10, 10]);
       }, 800);
-      return () => clearTimeout(timer);
+      return () => clearTimeout(hapticTimer);
     }
   }, [isBreathing, activeTab]);
 
@@ -198,7 +220,12 @@ export default function BlessFeed() {
       audioRefs.current[key] = audio;
     });
     return () => {
-      Object.values(audioRefs.current).forEach(audio => { audio.pause(); audio.src = ""; });
+      Object.values(audioRefs.current).forEach(audio => { 
+        audio.pause(); 
+        audio.currentTime = 0;
+        audio.src = ""; 
+        audio.load();
+      });
     };
   }, []);
 
@@ -236,6 +263,7 @@ export default function BlessFeed() {
       socketRef.current = io(BACKEND_URL, {
         reconnectionAttempts: 5,
         timeout: 10000,
+        autoConnect: true
       });
     }
     
@@ -270,11 +298,6 @@ export default function BlessFeed() {
     socket.on("breathing:paused", onBreathePause);
     socket.on("breathing:stopped", onBreatheStop);
 
-    try {
-      const saved = localStorage.getItem("bless_history");
-      if (saved) setLocalHistory(JSON.parse(saved));
-    } catch(e) { setLocalHistory([]); }
-
     return () => {
       socket.off("connect", onConnect);
       socket.off("disconnect", onDisconnect);
@@ -283,8 +306,6 @@ export default function BlessFeed() {
       socket.off("breathing:started", onBreatheStart);
       socket.off("breathing:paused", onBreathePause);
       socket.off("breathing:stopped", onBreatheStop);
-      // Optional: disconnect on unmount if global socket is not desired
-      // socket.disconnect(); 
     };
   }, []);
 
@@ -311,6 +332,16 @@ export default function BlessFeed() {
     if (socketRef.current?.connected) {
       socketRef.current.emit("breathing:stop");
     }
+    
+    // Logic to save the session to history
+    const newEntry = {
+      id: uuidv4(),
+      date: new Date().toISOString(),
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      val: displayIntensity
+    };
+    setLocalHistory(prev => [newEntry, ...prev].slice(0, 20));
+
     setShowSummary(true);
     setIsBreathing(false);
     setIsPaused(false);
@@ -354,7 +385,8 @@ export default function BlessFeed() {
   const handleLogout = () => {
     socketRef.current?.disconnect();
     localStorage.removeItem("token");
-    navigate("/login"); 
+    localStorage.removeItem("user");
+    navigate("/login", { replace: true });
   };
 
   return (

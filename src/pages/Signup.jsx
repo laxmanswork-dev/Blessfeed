@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import "./Login.css"; // reuse login styles
+import "./Login.css";
 
-// ENV first, fallback for local
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+// ✅ FORCE production backend
+const API_URL = "https://blessfeed-backend.onrender.com";
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -30,12 +30,12 @@ export default function Signup() {
         { headers: { "Content-Type": "application/json" } }
       );
 
-      // success → go to login
-      navigate("/login");
+      // ✅ go to login after success
+      navigate("/login", { replace: true });
     } catch (err) {
       setError(
         err.response?.data?.message ||
-          "Signup failed. Try a different email."
+        "Signup failed. Try a different email."
       );
     } finally {
       setLoading(false);

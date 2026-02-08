@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./Login.css";
 
-// ✅ Render ENV first, fallback for local
+// ENV first, fallback for local
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 export default function Login() {
@@ -16,33 +16,31 @@ export default function Login() {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      setError("Please enter email and password");
+      setError("Email and password are required");
       return;
     }
 
-    setError("");
     setLoading(true);
+    setError("");
 
     try {
-      const res = await axios.post(
+      const { data } = await axios.post(
         `${API_URL}/api/auth/login`,
         { email, password },
-        {
-          headers: { "Content-Type": "application/json" },
-          withCredentials: false
-        }
+        { headers: { "Content-Type": "application/json" } }
       );
 
-      // ✅ store token
-      localStorage.setItem("token", res.data.token);
+      // ✅ REQUIRED for BlessFeed
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("userEmail", email);
 
-      // ✅ move to home
-      navigate("/");
+      // ✅ prevent back navigation to login
+      navigate("/", { replace: true });
+
     } catch (err) {
-      console.error(err);
       setError(
         err.response?.data?.message ||
-        "Login failed. Check email or password."
+        "Login failed. Please check your credentials."
       );
     } finally {
       setLoading(false);
@@ -58,15 +56,19 @@ export default function Login() {
         <input
           type="email"
           placeholder="Email"
+          autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          disabled={loading}
         />
 
         <input
           type="password"
           placeholder="Password"
+          autoComplete="current-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          disabled={loading}
         />
 
         {error && <p className="error">{error}</p>}
