@@ -10,9 +10,10 @@ import authRoutes from "./routes/auth.js";
 dotenv.config();
 
 const app = express();
+
+/* ================= HTTP + SOCKET SERVER ================= */
 const server = http.createServer(app);
 
-// SOCKET.IO
 const io = new Server(server, {
   cors: {
     origin: "*",
@@ -20,32 +21,39 @@ const io = new Server(server, {
   },
 });
 
-// SOCKET EVENTS
+/* ================= SOCKET EVENTS ================= */
 io.on("connection", (socket) => {
   console.log("🟢 Socket connected:", socket.id);
+
+  socket.on("breath:sync", (data) => {
+    socket.broadcast.emit("breath:update", data);
+  });
 
   socket.on("disconnect", () => {
     console.log("🔴 Socket disconnected:", socket.id);
   });
 });
 
-// MIDDLEWARE
-app.use(cors({
-  origin: "*",
-  methods: ["GET", "POST"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-}));
+/* ================= MIDDLEWARE ================= */
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
 app.use(express.json());
 
-// HEALTH CHECK
+/* ================= HEALTH CHECK ================= */
 app.get("/health", (req, res) => {
-  res.json({ status: "Backend OK" });
+  res.json({ status: "Backend + Socket OK" });
 });
 
-// ROUTES
+/* ================= ROUTES ================= */
 app.use("/api/auth", authRoutes);
 
-// START SERVER
+/* ================= START SERVER ================= */
 const PORT = process.env.PORT || 5000;
 
 mongoose
@@ -53,7 +61,7 @@ mongoose
   .then(() => {
     console.log("✅ MongoDB connected");
     server.listen(PORT, () => {
-      console.log(`🚀 Server + Socket running on port ${PORT}`);
+      console.log(`🚀 Server + Socket.IO running on port ${PORT}`);
     });
   })
   .catch((err) => {
