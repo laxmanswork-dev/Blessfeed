@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import "./Login.css";
 
@@ -8,55 +7,22 @@ const API_URL = "https://blessfeed-backend.onrender.com";
 
 export default function Signup() {
   const navigate = useNavigate();
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
+  const [error, setError] = useState("");
 
   const handleSignup = async (e) => {
     if (e) e.preventDefault();
-
-    // 1. Basic Validation
-    if (!email || !password) {
-      setError("Email and password are required");
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      return;
-    }
-
-    if (password.length < 6) {
-      setError("Password should be at least 6 characters");
-      return;
-    }
-
-    setError("");
+    if (password.length < 6) return setError("Minimum 6 characters required.");
+    
     setLoading(true);
-
+    setError("");
     try {
-      await axios.post(
-        `${API_URL}/api/auth/register`,
-        { email, password },
-        { headers: { "Content-Type": "application/json" } }
-      );
-
-      setIsSuccess(true);
-      
-      // Delay navigation so user sees the success state
-      setTimeout(() => {
-        navigate("/login", { replace: true });
-      }, 1500);
-
+      await axios.post(`${API_URL}/api/auth/register`, { email, password });
+      navigate("/login", { replace: true });
     } catch (err) {
-      setError(
-        err.response?.data?.message ||
-        "Signup failed. This email may already be in use."
-      );
+      setError("This email is already registered.");
     } finally {
       setLoading(false);
     }
@@ -64,74 +30,40 @@ export default function Signup() {
 
   return (
     <div className="login-bg">
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }} 
-        animate={{ opacity: 1, y: 0 }}
-        className="login-card"
-      >
+      <div className="login-card">
         <header className="login-header">
           <h2 className="brand">BLESSFEED</h2>
-          <p className="tagline">Create your space</p>
+          <p className="subtitle">A moment for yourself</p>
         </header>
 
-        <AnimatePresence mode="wait">
-          {!isSuccess ? (
-            <motion.form 
-              key="signup-form"
-              exit={{ opacity: 0, scale: 0.95 }}
-              onSubmit={handleSignup} 
-              className="login-form"
-            >
-              <input
-                type="email"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                autoComplete="email"
-                disabled={loading}
-              />
+        <form className="login-form" onSubmit={handleSignup}>
+          <input 
+            type="email" 
+            placeholder="Email Address" 
+            onChange={(e) => setEmail(e.target.value)} 
+            required 
+          />
+          <input 
+            type="password" 
+            placeholder="Create Password" 
+            onChange={(e) => setPassword(e.target.value)} 
+            required 
+          />
+          {error && <p className="error-text">{error}</p>}
+          <button type="submit" className="login-submit-btn" disabled={loading}>
+            {loading ? "Preparing Space..." : "Get Started"}
+          </button>
+        </form>
 
-              <input
-                type="password"
-                placeholder="Create Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoComplete="new-password"
-                disabled={loading}
-              />
+        <div className="divider"><span>Social Connection</span></div>
+        <button className="google-btn" onClick={() => window.location.href = `${API_URL}/api/auth/google`}>
+          Continue with Google
+        </button>
 
-              <input
-                type="password"
-                placeholder="Confirm Password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                autoComplete="new-password"
-                disabled={loading}
-              />
-
-              {error && <p className="error-text">{error}</p>}
-
-              <button type="submit" disabled={loading} className="login-submit-btn">
-                {loading ? "Creating..." : "Get started"}
-              </button>
-
-              <p className="switch-auth">
-                Already have an account? <Link to="/login">Sign in</Link>
-              </p>
-            </motion.form>
-          ) : (
-            <motion.div 
-              key="success-message"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="success-state"
-            >
-              <div className="success-icon">✓</div>
-              <p>Account created. Welcome.</p>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
+        <p className="auth-switch">
+          Already a member? <Link to="/login">Sign in</Link>
+        </p>
+      </div>
     </div>
   );
 }

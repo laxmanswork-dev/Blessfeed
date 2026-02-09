@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
 
 :root {
-  --accent-color: #6366f1;
+  --accent-glow: #6366f1;
   --glass-bg: rgba(255, 255, 255, 0.03);
   --glass-border: rgba(255, 255, 255, 0.08);
 }
@@ -15,40 +15,40 @@
   font-family: 'Inter', sans-serif;
   position: relative;
   overflow: hidden;
-  padding: 20px;
+  padding: 24px;
 }
 
-/* Background Atmosphere */
+/* Atmospheric Glow */
 .login-bg::before {
   content: "";
   position: absolute;
-  width: 400px;
-  height: 400px;
-  background: radial-gradient(circle, var(--accent-color) 0%, transparent 70%);
-  filter: blur(100px);
-  top: 10%;
+  width: 450px;
+  height: 450px;
+  background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+  filter: blur(120px);
+  top: 15%;
   left: 20%;
-  opacity: 0.12;
+  opacity: 0.1;
   pointer-events: none;
 }
 
 .login-card {
   width: 100%;
   max-width: 380px;
-  padding: 48px 40px;
+  padding: 52px 40px;
   background: var(--glass-bg);
-  backdrop-filter: blur(25px);
-  -webkit-backdrop-filter: blur(25px);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
   border: 1px solid var(--glass-border);
   border-radius: 44px;
   text-align: center;
   z-index: 10;
-  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.8);
+  box-shadow: 0 50px 100px rgba(0, 0, 0, 0.9);
 }
 
-/* Centered Header */
+/* Header Typography */
 .login-header {
-  margin-bottom: 42px;
+  margin-bottom: 44px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -60,63 +60,73 @@
   letter-spacing: 0.4em;
   color: #ffffff;
   margin: 0;
-  text-indent: 0.4em; /* Keeps it centered */
+  line-height: 1;
+  text-indent: 0.4em; /* Optical centering */
 }
 
 .subtitle {
   font-size: 9px;
   font-weight: 400;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.65);
+  color: rgba(255, 255, 255, 0.6);
   letter-spacing: 0.5em;
   margin-top: 12px;
+  line-height: 1;
   text-indent: 0.5em; /* Optical centering */
 }
 
-/* Form Styles */
+/* Balanced Input Fields */
 .login-form {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
 input {
   width: 100%;
-  padding: 18px 22px;
+  padding: 20px 24px; /* Balanced vertical space */
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 18px;
-  color: #fff;
+  color: #ffffff;
   font-size: 14px;
+  line-height: 1; /* Forces text to sit on the baseline correctly */
   outline: none;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+}
+
+input::placeholder {
+  color: rgba(255, 255, 255, 0.35); /* Softer whisper opacity */
+  transition: opacity 0.3s ease;
 }
 
 input:focus {
   background: rgba(255, 255, 255, 0.07);
-  border-color: var(--accent-color);
+  border-color: var(--accent-glow);
 }
 
+/* Actions */
 .login-submit-btn {
   width: 100%;
   padding: 18px;
-  background: #fff;
+  background: #ffffff;
   border: none;
   border-radius: 18px;
-  color: #000;
+  color: #000000;
   font-weight: 600;
   font-size: 13px;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   cursor: pointer;
-  margin-top: 10px;
-  transition: transform 0.2s ease;
+  margin-top: 12px;
+  transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
 }
 
-.login-submit-btn:active { transform: scale(0.98); }
+.login-submit-btn:active { transform: scale(0.97); }
 
 .divider {
-  margin: 30px 0;
+  margin: 32px 0;
   display: flex;
   align-items: center;
   color: rgba(255, 255, 255, 0.15);
@@ -130,7 +140,7 @@ input:focus {
   flex: 1;
   height: 1px;
   background: rgba(255, 255, 255, 0.06);
-  margin: 0 15px;
+  margin: 0 16px;
 }
 
 .google-btn {
@@ -142,7 +152,7 @@ input:focus {
   color: rgba(255, 255, 255, 0.8);
   font-size: 13px;
   cursor: pointer;
-  transition: background 0.3s;
+  transition: background 0.3s ease;
 }
 
 .google-btn:hover { background: rgba(255, 255, 255, 0.03); }
@@ -150,18 +160,20 @@ input:focus {
 .error-text {
   font-size: 11px;
   color: #ff5f5f;
-  margin-top: -5px;
+  margin-top: 4px;
+  text-align: left;
+  padding-left: 4px;
 }
 
 .auth-switch {
-  margin-top: 25px;
+  margin-top: 28px;
   font-size: 12px;
   color: rgba(255, 255, 255, 0.4);
 }
 
 .auth-switch a {
-  color: #fff;
+  color: #ffffff;
   text-decoration: none;
   font-weight: 600;
-  margin-left: 5px;
+  margin-left: 6px;
 }
