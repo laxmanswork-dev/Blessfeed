@@ -1,6 +1,7 @@
 import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import passport from "passport";
 import User from "../models/User.js";
 
 const router = express.Router();
@@ -24,6 +25,7 @@ router.post("/register", async (req, res) => {
     await User.create({
       email,
       password: hashedPassword,
+      provider: "local",
     });
 
     res.status(201).json({ message: "User registered successfully" });
@@ -33,12 +35,12 @@ router.post("/register", async (req, res) => {
   }
 });
 
-/* ================= LOGIN (THIS WAS MISSING) ================= */
+/* ================= LOGIN ================= */
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email, provider: "local" });
     if (!user) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
@@ -60,5 +62,35 @@ router.post("/login", async (req, res) => {
     res.status(500).json({ message: "Login failed" });
   }
 });
+
+/* ================= GOOGLE LOGIN ================= */
+router.get(
+  "/google",
+  passport.authenticate("google", {
+    scope: ["profile", "email"],
+    session: false,
+  })
+);
+
+/* ================= GOOGLE CALLBACK ================= */
+router.get(
+  "/google/callback",
+  passport.authenticate("google", {
+    session: false,
+    failureRedirect: "/login",
+  }),
+  (req, res) => {
+    const token = jwt.sign(
+      { userId: req.user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    // 🔥 redirect back to frontend with token
+    res.redirect(
+      `${process.env.CLIENT_URL}/oauth-success?token=${token}`
+    );
+  }
+);
 
 export default router;
