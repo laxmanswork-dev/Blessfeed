@@ -1,6 +1,6 @@
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
-import User from "../models/User.js";
+import User from "./models/User.js"; // ✅ VERY IMPORTANT PATH
 
 passport.use(
   new GoogleStrategy(
@@ -11,7 +11,12 @@ passport.use(
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        const email = profile.emails[0].value;
+        // ✅ safe email extraction
+        const email = profile.emails?.[0]?.value;
+
+        if (!email) {
+          return done(new Error("No email returned from Google"), null);
+        }
 
         let user = await User.findOne({ email });
 
@@ -23,15 +28,28 @@ passport.use(
         }
 
         return done(null, user);
-      } catch (err) {
-        return done(err, null);
+      } catch (error) {
+        return done(error, null);
       }
     }
   )
 );
 
-// required (even if we don’t use sessions)
-passport.serializeUser((user, done) => done(null, user.id));
-passport.deserializeUser((id, done) => done(null, id));
+/*
+  Even if you are NOT using sessions,
+  passport requires these methods.
+*/
+passport.serializeUser((user, done) => {
+  done(null, user.id);
+});
+
+passport.deserializeUser(async (id, done) => {
+  try {
+    const user = await User.findById(id);
+    done(null, user);
+  } catch (error) {
+    done(error, null);
+  }
+});
 
 export default passport;
