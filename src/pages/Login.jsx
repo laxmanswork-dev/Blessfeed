@@ -1,79 +1,34 @@
-// src/pages/Login.jsx
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import "./Login.css";
-
-const API_URL = "https://blessfeed-backend.onrender.com";
-
 export default function Login() {
-  const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  // ... (keep your existing state logic)
 
-  const handleLogin = async (e) => {
-    e.preventDefault(); // High-end apps never refresh the page
-    setLoading(true);
-    setError("");
-    try {
-      const { data } = await axios.post(`${API_URL}/api/auth/login`, { email, password });
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", email);
-      navigate("/", { replace: true });
-    } catch (err) {
-      setError("Credentials do not match our records.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // ALL LOGIC ABOVE, RETURN BELOW - BOTH INSIDE ONE FUNCTION
   return (
     <div className="login-bg">
       <div className="login-card">
-        <div className="brand-section">
+        <header>
           <h1 className="brand">BLESSFEED</h1>
           <p className="tagline">A moment for yourself</p>
-        </div>
+        </header>
 
         <form className="login-form" onSubmit={handleLogin}>
-          <div className="input-group">
-            <input 
-              type="email" 
-              placeholder="Email address" 
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required 
-            />
-          </div>
-          <div className="input-group">
-            <input 
-              type="password" 
-              placeholder="Password" 
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required 
-            />
-          </div>
-          
-          {error && <p className="error-text">{error}</p>}
+          <input 
+            type="email" 
+            placeholder="Email address" 
+            onChange={(e) => setEmail(e.target.value)} 
+          />
+          <input 
+            type="password" 
+            placeholder="Password" 
+            onChange={(e) => setPassword(e.target.value)} 
+          />
           
           <button type="submit" className="login-submit-btn" disabled={loading}>
             {loading ? "Aligning..." : "Sign In"}
           </button>
         </form>
 
-        <div className="divider">
-          <span>OR</span>
-        </div>
+        <div className="divider">OR</div>
 
-        <button 
-          className="google-btn" 
-          type="button"
-          onClick={() => window.location.href = `${API_URL}/api/auth/google`}
-        >
+        <button className="google-btn" onClick={() => window.location.href = `${API_URL}/api/auth/google`}>
           <svg width="20" height="20" viewBox="0 0 24 24">
             <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
             <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
