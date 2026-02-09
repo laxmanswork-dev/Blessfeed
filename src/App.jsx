@@ -4,16 +4,18 @@ import Feed from "./pages/Feed";
 import Profile from "./pages/Profile";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import LoginSuccess from "./pages/LoginSuccess"; // ✅ ADD THIS
 import ProtectedRoute from "./components/ProtectedRoute";
 
 export default function App() {
   return (
     <Routes>
-      {/* Public */}
+      {/* ===== PUBLIC ROUTES ===== */}
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
+      <Route path="/login-success" element={<LoginSuccess />} /> {/* ✅ GOOGLE CALLBACK */}
 
-      {/* Protected */}
+      {/* ===== PROTECTED ROUTES ===== */}
       <Route
         path="/"
         element={
