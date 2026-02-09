@@ -6,7 +6,7 @@ import User from "../models/User.js";
 
 const router = express.Router();
 
-/* ================= REGISTER ================= */
+/* ================= EMAIL REGISTER ================= */
 router.post("/register", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -25,7 +25,6 @@ router.post("/register", async (req, res) => {
     await User.create({
       email,
       password: hashedPassword,
-      provider: "local",
     });
 
     res.status(201).json({ message: "User registered successfully" });
@@ -35,13 +34,13 @@ router.post("/register", async (req, res) => {
   }
 });
 
-/* ================= LOGIN ================= */
+/* ================= EMAIL LOGIN ================= */
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email, provider: "local" });
-    if (!user) {
+    const user = await User.findOne({ email });
+    if (!user || !user.password) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
@@ -64,6 +63,8 @@ router.post("/login", async (req, res) => {
 });
 
 /* ================= GOOGLE LOGIN ================= */
+
+// STEP 1 → redirect to Google
 router.get(
   "/google",
   passport.authenticate("google", {
@@ -72,23 +73,24 @@ router.get(
   })
 );
 
-/* ================= GOOGLE CALLBACK ================= */
+// STEP 2 → Google callback
 router.get(
   "/google/callback",
   passport.authenticate("google", {
     session: false,
-    failureRedirect: "/login",
+    failureRedirect: `${process.env.FRONTEND_URL}/login`,
   }),
   (req, res) => {
+    // 🔐 ISSUE JWT AFTER GOOGLE LOGIN
     const token = jwt.sign(
       { userId: req.user._id },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
 
-    // 🔥 redirect back to frontend with token
+    // 🔁 Redirect back to frontend WITH token
     res.redirect(
-      `${process.env.CLIENT_URL}/oauth-success?token=${token}`
+      `${process.env.FRONTEND_URL}/login-success?token=${token}&email=${req.user.email}`
     );
   }
 );
