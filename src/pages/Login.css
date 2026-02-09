@@ -1,9 +1,9 @@
-/* Login.css */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
 
 :root {
-  --primary-glow: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
   --accent-color: #6366f1;
+  --glass-bg: rgba(255, 255, 255, 0.03);
+  --glass-border: rgba(255, 255, 255, 0.08);
 }
 
 .login-bg {
@@ -15,135 +15,153 @@
   font-family: 'Inter', sans-serif;
   position: relative;
   overflow: hidden;
+  padding: 20px;
 }
 
-/* The Animated Clouds in the background */
+/* Background Atmosphere */
 .login-bg::before {
   content: "";
   position: absolute;
-  width: 300px;
-  height: 300px;
-  background: #6366f1;
-  filter: blur(120px);
-  border-radius: 50%;
-  top: 20%;
-  left: 30%;
-  opacity: 0.15;
-  animation: float 10s infinite alternate;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, var(--accent-color) 0%, transparent 70%);
+  filter: blur(100px);
+  top: 10%;
+  left: 20%;
+  opacity: 0.12;
+  pointer-events: none;
 }
 
-@keyframes float {
-  from { transform: translate(0, 0); }
-  to { transform: translate(40px, 40px); }
-}
-
-/* The Premium Glass Card */
 .login-card {
   width: 100%;
   max-width: 380px;
-  padding: 40px;
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 40px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  padding: 48px 40px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border: 1px solid var(--glass-border);
+  border-radius: 44px;
   text-align: center;
   z-index: 10;
+  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.8);
+}
+
+/* Centered Header */
+.login-header {
+  margin-bottom: 42px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .brand {
-  font-size: 28px;
-  letter-spacing: 0.3em;
+  font-size: 26px;
   font-weight: 300;
-  color: white;
-  margin-bottom: 8px;
+  letter-spacing: 0.4em;
+  color: #ffffff;
+  margin: 0;
+  text-indent: 0.4em; /* Keeps it centered */
 }
 
-.tagline {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.4);
+.subtitle {
+  font-size: 9px;
+  font-weight: 400;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  margin-bottom: 40px;
+  color: rgba(255, 255, 255, 0.65);
+  letter-spacing: 0.5em;
+  margin-top: 12px;
+  text-indent: 0.5em; /* Optical centering */
 }
 
-/* Premium Inputs */
+/* Form Styles */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
 input {
   width: 100%;
-  padding: 16px 20px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  color: white;
-  margin-bottom: 16px;
+  padding: 18px 22px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 18px;
+  color: #fff;
+  font-size: 14px;
   outline: none;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 input:focus {
+  background: rgba(255, 255, 255, 0.07);
   border-color: var(--accent-color);
-  background: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 0 20px rgba(99, 102, 241, 0.1);
 }
 
-/* Glow Button */
-.login-submit-btn, .primary-btn {
+.login-submit-btn {
   width: 100%;
-  padding: 16px;
-  background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+  padding: 18px;
+  background: #fff;
   border: none;
-  border-radius: 16px;
-  color: white;
+  border-radius: 18px;
+  color: #000;
   font-weight: 600;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
   margin-top: 10px;
+  transition: transform 0.2s ease;
 }
 
-.login-submit-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
-}
+.login-submit-btn:active { transform: scale(0.98); }
 
 .divider {
-  margin: 24px 0;
+  margin: 30px 0;
   display: flex;
   align-items: center;
-  color: rgba(255, 255, 255, 0.2);
-  font-size: 11px;
+  color: rgba(255, 255, 255, 0.15);
+  font-size: 9px;
   text-transform: uppercase;
+  letter-spacing: 0.2em;
 }
 
 .divider::before, .divider::after {
   content: "";
   flex: 1;
   height: 1px;
-  background: rgba(255, 255, 255, 0.1);
-  margin: 0 10px;
+  background: rgba(255, 255, 255, 0.06);
+  margin: 0 15px;
 }
 
 .google-btn {
   width: 100%;
-  padding: 14px;
+  padding: 16px;
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 13px;
   cursor: pointer;
-  transition: background 0.3s ease;
+  transition: background 0.3s;
 }
 
-.google-btn:hover {
-  background: rgba(255, 255, 255, 0.05);
-}
+.google-btn:hover { background: rgba(255, 255, 255, 0.03); }
 
 .error-text {
-  color: #ff4d4d;
+  font-size: 11px;
+  color: #ff5f5f;
+  margin-top: -5px;
+}
+
+.auth-switch {
+  margin-top: 25px;
   font-size: 12px;
-  margin-bottom: 15px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.auth-switch a {
+  color: #fff;
+  text-decoration: none;
+  font-weight: 600;
+  margin-left: 5px;
 }

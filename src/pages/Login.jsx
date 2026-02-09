@@ -1,6 +1,5 @@
-// Login.jsx
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import "./Login.css";
 
@@ -26,7 +25,7 @@ export default function Login() {
       localStorage.setItem("user", email);
       navigate("/", { replace: true });
     } catch (err) {
-      setError("Login failed. Check your credentials.");
+      setError("Invalid credentials. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -35,42 +34,37 @@ export default function Login() {
   return (
     <div className="login-bg">
       <div className="login-card">
-        <h2 className="brand">BLESSFEED</h2>
-        <p className="tagline">A moment for yourself</p>
+        <header className="login-header">
+          <h2 className="brand">BLESSFEED</h2>
+          <p className="subtitle">A moment for yourself</p>
+        </header>
 
         {savedToken && savedUser && (
-          <div className="resume-section">
-            <button className="primary-btn" onClick={() => navigate("/")}>
-              Continue as {savedUser}
+          <div style={{ marginBottom: '24px' }}>
+            <button className="login-submit-btn" onClick={() => navigate("/")}>
+              Continue as {savedUser.split('@')[0]}
             </button>
             <div className="divider"><span>or sign in</span></div>
           </div>
         )}
 
-        <form onSubmit={handleLogin}>
-          <input 
-            type="email" 
-            placeholder="Email" 
-            onChange={(e) => setEmail(e.target.value)} 
-            required 
-          />
-          <input 
-            type="password" 
-            placeholder="Password" 
-            onChange={(e) => setPassword(e.target.value)} 
-            required 
-          />
+        <form className="login-form" onSubmit={handleLogin}>
+          <input type="email" placeholder="Email" onChange={(e) => setEmail(e.target.value)} required />
+          <input type="password" placeholder="Password" onChange={(e) => setPassword(e.target.value)} required />
           {error && <p className="error-text">{error}</p>}
           <button type="submit" className="login-submit-btn" disabled={loading}>
-            {loading ? "Aligning..." : "Continue"}
+            {loading ? "Aligning..." : "Sign In"}
           </button>
         </form>
 
-        <div className="divider"><span>or</span></div>
-
+        <div className="divider"><span>Social Sync</span></div>
         <button className="google-btn" onClick={() => window.location.href = `${API_URL}/api/auth/google`}>
           Continue with Google
         </button>
+
+        <p className="auth-switch">
+          New here? <Link to="/signup">Create account</Link>
+        </p>
       </div>
     </div>
   );
