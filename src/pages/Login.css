@@ -1,129 +1,149 @@
-/* Login.css - The Final High-End Polish */
+/* Login.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
+
 :root {
-  --bg-dark: #08080a;
-  --glass-white: rgba(255, 255, 255, 0.03);
-  --glass-border: rgba(255, 255, 255, 0.07);
-  --text-dim: rgba(255, 255, 255, 0.45);
+  --primary-glow: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
+  --accent-color: #6366f1;
 }
 
 .login-bg {
   min-height: 100vh;
-  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg-dark);
-  /* Subtlest background glow to prevent it from looking like a flat black box */
-  background-image: radial-gradient(circle at 50% -20%, #1a1a2e 0%, transparent 50%);
+  background: #050505;
+  font-family: 'Inter', sans-serif;
+  position: relative;
+  overflow: hidden;
 }
 
+/* The Animated Clouds in the background */
+.login-bg::before {
+  content: "";
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  background: #6366f1;
+  filter: blur(120px);
+  border-radius: 50%;
+  top: 20%;
+  left: 30%;
+  opacity: 0.15;
+  animation: float 10s infinite alternate;
+}
+
+@keyframes float {
+  from { transform: translate(0, 0); }
+  to { transform: translate(40px, 40px); }
+}
+
+/* The Premium Glass Card */
 .login-card {
-  width: 90%;
-  max-width: 400px;
-  padding: 56px 40px;
-  background: var(--glass-white);
-  backdrop-filter: blur(40px); /* Deep blur for luxury feel */
-  -webkit-backdrop-filter: blur(40px);
-  border-radius: 32px; /* Smooth rounded corners */
-  border: 1px solid var(--glass-border);
-  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.6);
+  width: 100%;
+  max-width: 380px;
+  padding: 40px;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 40px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
   text-align: center;
+  z-index: 10;
 }
 
-/* Typography alignment and color */
 .brand {
-  font-size: 32px;
-  font-weight: 700;
+  font-size: 28px;
   letter-spacing: 0.3em;
-  color: #fff;
+  font-weight: 300;
+  color: white;
   margin-bottom: 8px;
-  text-transform: uppercase;
 }
 
 .tagline {
-  font-size: 14px;
-  color: var(--text-dim);
-  margin-bottom: 48px;
-  font-weight: 300;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 40px;
 }
 
-/* Perfect Input alignment */
-.login-form {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
+/* Premium Inputs */
 input {
   width: 100%;
-  height: 58px; /* Consistent height */
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid var(--glass-border);
+  padding: 16px 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
-  padding: 0 20px;
-  color: #fff;
-  font-size: 16px;
-  transition: border 0.3s ease;
+  color: white;
+  margin-bottom: 16px;
+  outline: none;
+  transition: all 0.3s ease;
 }
 
 input:focus {
-  outline: none;
-  border-color: rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--accent-color);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.1);
 }
 
-/* The High-Contrast Button */
-.login-submit-btn {
-  height: 58px;
-  margin-top: 12px;
-  background: #fff;
-  color: #000;
+/* Glow Button */
+.login-submit-btn, .primary-btn {
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
   border: none;
   border-radius: 16px;
+  color: white;
   font-weight: 600;
-  font-size: 16px;
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  margin-top: 10px;
 }
 
 .login-submit-btn:hover {
-  opacity: 0.9;
-}
-
-/* Secondary Button (Google) */
-.google-btn {
-  width: 100%;
-  height: 56px;
-  background: transparent;
-  border: 1px solid var(--glass-border);
-  border-radius: 16px;
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  font-size: 15px;
-  cursor: pointer;
-  transition: background 0.3s;
-}
-
-.google-btn:hover {
-  background: rgba(255, 255, 255, 0.05);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
 }
 
 .divider {
-  margin: 32px 0;
+  margin: 24px 0;
   display: flex;
   align-items: center;
-  color: var(--text-dim);
+  color: rgba(255, 255, 255, 0.2);
   font-size: 11px;
-  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
 .divider::before, .divider::after {
   content: "";
   flex: 1;
   height: 1px;
-  background: var(--glass-border);
-  margin: 0 15px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 0 10px;
+}
+
+.google-btn {
+  width: 100%;
+  padding: 14px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.google-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.error-text {
+  color: #ff4d4d;
+  font-size: 12px;
+  margin-bottom: 15px;
 }
