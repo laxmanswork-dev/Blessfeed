@@ -25,7 +25,7 @@ export default function Login() {
       localStorage.setItem("user", email);
       navigate("/", { replace: true });
     } catch (err) {
-      setError("Invalid credentials. Please try again.");
+      setError("Credentials not found. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -49,21 +49,31 @@ export default function Login() {
         )}
 
         <form className="login-form" onSubmit={handleLogin}>
-          <input type="email" placeholder="Email" onChange={(e) => setEmail(e.target.value)} required />
-          <input type="password" placeholder="Password" onChange={(e) => setPassword(e.target.value)} required />
+          <input 
+            type="email" 
+            placeholder="Email Address" 
+            onChange={(e) => setEmail(e.target.value)} 
+            required 
+          />
+          <input 
+            type="password" 
+            placeholder="Password" 
+            onChange={(e) => setPassword(e.target.value)} 
+            required 
+          />
           {error && <p className="error-text">{error}</p>}
           <button type="submit" className="login-submit-btn" disabled={loading}>
             {loading ? "Aligning..." : "Sign In"}
           </button>
         </form>
 
-        <div className="divider"><span>Social Sync</span></div>
+        <div className="divider"><span>Social Connection</span></div>
         <button className="google-btn" onClick={() => window.location.href = `${API_URL}/api/auth/google`}>
           Continue with Google
         </button>
 
         <p className="auth-switch">
-          New here? <Link to="/signup">Create account</Link>
+          New to the flow? <Link to="/signup">Join now</Link>
         </p>
       </div>
     </div>
