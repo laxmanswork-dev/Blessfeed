@@ -5,12 +5,12 @@ import dotenv from "dotenv";
 import http from "http";
 import { Server } from "socket.io";
 import passport from "passport";
+import jwt from "jsonwebtoken";
 
-import "./passport.js"; // passport config
+import "./passport.js";
 import authRoutes from "./routes/auth.js";
 import sessionRoutes from "./routes/session.js";
 
-// 🔗 CONTROLLERS (DB LOGIC)
 import {
   startSession,
   updateIntensity,
@@ -21,31 +21,29 @@ dotenv.config();
 
 const app = express();
 
-/* ================= HTTP + SOCKET SERVER ================= */
+/* ================= HTTP SERVER ================= */
 const server = http.createServer(app);
 
+/* ================= SOCKET SERVER ================= */
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: process.env.FRONTEND_URL,
     methods: ["GET", "POST"],
   },
 });
 
-/* ================= SOCKET AUTH (JWT) ================= */
-// Client must send token in socket handshake auth
+/* ================= SOCKET JWT AUTH ================= */
 io.use((socket, next) => {
   try {
     const token = socket.handshake.auth?.token;
     if (!token) return next(new Error("No token"));
 
-    // Passport JWT strategy
-    passport.authenticate("jwt", { session: false }, (err, user) => {
-      if (err || !user) return next(new Error("Unauthorized"));
-      socket.userId = user._id.toString();
-      next();
-    })(socket.request);
-  } catch (e) {
-    next(new Error("Socket auth failed"));
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    socket.userId = decoded.id;
+
+    next();
+  } catch (err) {
+    next(new Error("Unauthorized socket"));
   }
 });
 
@@ -53,7 +51,6 @@ io.use((socket, next) => {
 io.on("connection", (socket) => {
   console.log("🟢 Socket connected:", socket.id, "User:", socket.userId);
 
-  /* --- START SESSION (first resonance touch) --- */
   socket.on("breathing:start", async (data) => {
     try {
       const req = {
@@ -75,7 +72,6 @@ io.on("connection", (socket) => {
     }
   });
 
-  /* --- UPDATE INTENSITY (slider movement) --- */
   socket.on("resonance:update", async (data) => {
     try {
       const req = {
@@ -97,7 +93,6 @@ io.on("connection", (socket) => {
     }
   });
 
-  /* --- END SESSION (release feed) --- */
   socket.on("breathing:stop", async (data) => {
     try {
       const req = {
@@ -120,7 +115,6 @@ io.on("connection", (socket) => {
     }
   });
 
-  /* --- SIMPLE REAL-TIME SYNC (NO DB) --- */
   socket.on("breath:sync", (data) => {
     socket.broadcast.emit("breath:update", data);
   });
@@ -133,16 +127,15 @@ io.on("connection", (socket) => {
 /* ================= MIDDLEWARE ================= */
 app.use(
   cors({
-    origin: "*",
-    methods: ["GET", "POST"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    origin: process.env.FRONTEND_URL,
+    credentials: true,
   })
 );
 
 app.use(express.json());
 app.use(passport.initialize());
 
-/* ================= HEALTH CHECK ================= */
+/* ================= HEALTH ================= */
 app.get("/health", (req, res) => {
   res.json({ status: "Backend + Socket OK" });
 });
@@ -152,7 +145,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/session", sessionRoutes);
 
 /* ================= START SERVER ================= */
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT;
 
 mongoose
   .connect(process.env.MONGO_URI)
