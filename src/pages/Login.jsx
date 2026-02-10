@@ -1,9 +1,10 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import "./Login.css";
 
 const API_URL = "https://blessfeed-backend.onrender.com";
+const SOUND_PATH = "/mnt/data/46268990-alien-robot-246019.mp3";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -12,18 +13,22 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Memoize audio to prevent reloading on every render
-  const clickSound = useMemo(() => new Audio("/mnt/data/46268990-alien-robot-246019.mp3"), []);
-  
-  const playClick = () => {
-    clickSound.currentTime = 0;
-    clickSound.volume = 0.4; // Soft premium volume
-    clickSound.play().catch(e => console.log("Sound blocked by browser"));
-  };
+  // 2️⃣ CLICK SOUND PRELOAD
+  const [clickAudio] = useState(new Audio(SOUND_PATH));
+
+  useEffect(() => {
+    clickAudio.load();
+    clickAudio.volume = 0.3; // Low and subtle
+  }, [clickAudio]);
+
+  const playClick = useCallback(() => {
+    clickAudio.currentTime = 0; // Instant reset
+    clickAudio.play().catch(() => {}); // Catch browser block
+  }, [clickAudio]);
 
   const handleLogin = async (e) => {
     if (e) e.preventDefault();
-    playClick(); // Trigger 1: Primary Button
+    playClick(); // Attached to SIGN IN
     setLoading(true);
     setError("");
     try {
@@ -55,7 +60,6 @@ export default function Login() {
             required 
           />
           {error && <p className="error-text">{error}</p>}
-          
           <input 
             type="password" 
             placeholder="Password" 
@@ -63,7 +67,6 @@ export default function Login() {
             onChange={(e) => setPassword(e.target.value)} 
             required 
           />
-          
           <button type="submit" className="login-submit-btn" disabled={loading}>
             {loading ? "ALIGNING..." : "SIGN IN"}
           </button>

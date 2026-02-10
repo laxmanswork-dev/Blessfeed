@@ -16,7 +16,6 @@
   font-family: 'Inter', sans-serif;
   position: relative;
   overflow: hidden;
-  padding: 24px;
 }
 
 .login-card {
@@ -34,9 +33,6 @@
 
 .login-header {
   margin-bottom: 44px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
 }
 
 .brand {
@@ -50,7 +46,6 @@
 
 .subtitle {
   font-size: 9px;
-  font-weight: 400;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.6);
   letter-spacing: 0.5em;
@@ -58,7 +53,7 @@
   text-indent: 0.5em;
 }
 
-/* 1️⃣ REFINED INPUT FIELDS */
+/* 1️⃣ BUG FIX: INPUT TEXT PADDING & ALIGNMENT */
 .login-form {
   display: flex;
   flex-direction: column;
@@ -67,23 +62,24 @@
 
 input {
   width: 100%;
-  /* High Priority: Increased Vertical (22px) and Left (28px) padding */
-  padding: 22px 28px; 
+  /* Explicit padding to prevent border touching */
+  padding: 22px 28px !important; 
   background: var(--glass-empty);
   border: 1px solid var(--glass-border);
   border-radius: 18px;
   color: #ffffff;
   font-size: 15px;
-  /* Optically centers typed text and placeholder */
-  line-height: normal; 
+  
+  /* Fixed line-height for vertical centering */
+  line-height: 1.2; 
+  box-sizing: border-box; 
   outline: none;
-  box-sizing: border-box;
-  transition: background 0.4s ease, border-color 0.3s ease;
+  display: block;
+  transition: background 0.4s ease;
 }
 
 input:not(:placeholder-shown) {
   background: var(--glass-filled);
-  border-color: rgba(255, 255, 255, 0.15);
 }
 
 input::placeholder {
@@ -93,11 +89,9 @@ input::placeholder {
 .error-text {
   font-size: 10.5px;
   color: rgba(255, 95, 95, 0.9);
-  margin-top: -4px;
-  margin-bottom: 4px;
   text-align: left;
   padding-left: 12px;
-  line-height: 1.5;
+  margin: -4px 0 4px 0;
 }
 
 .login-submit-btn {
@@ -106,7 +100,7 @@ input::placeholder {
   background: #ffffff;
   border: none;
   border-radius: 18px;
-  color: #000000;
+  color: #000;
   font-weight: 500;
   font-size: 12px;
   text-transform: uppercase;
@@ -121,7 +115,6 @@ input::placeholder {
   align-items: center;
   color: rgba(255, 255, 255, 0.25);
   font-size: 9px;
-  text-transform: uppercase;
   letter-spacing: 0.25em;
 }
 

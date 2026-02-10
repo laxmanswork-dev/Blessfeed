@@ -1,9 +1,10 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import "./Login.css";
 
 const API_URL = "https://blessfeed-backend.onrender.com";
+const SOUND_PATH = "/mnt/data/46268990-alien-robot-246019.mp3";
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -12,20 +13,23 @@ export default function Signup() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const clickSound = useMemo(() => new Audio("/mnt/data/46268990-alien-robot-246019.mp3"), []);
-  
-  const playClick = () => {
-    clickSound.currentTime = 0;
-    clickSound.volume = 0.4;
-    clickSound.play().catch(e => console.log("Sound blocked by browser"));
-  };
+  const [clickAudio] = useState(new Audio(SOUND_PATH));
+
+  useEffect(() => {
+    clickAudio.load();
+    clickAudio.volume = 0.3;
+  }, [clickAudio]);
+
+  const playClick = useCallback(() => {
+    clickAudio.currentTime = 0;
+    clickAudio.play().catch(() => {});
+  }, [clickAudio]);
 
   const handleSignup = async (e) => {
     if (e) e.preventDefault();
-    playClick(); 
+    playClick(); // Attached to GET STARTED
     if (password.length < 6) return setError("A longer path is required for security.");
     setLoading(true);
-    setError("");
     try {
       await axios.post(`${API_URL}/api/auth/register`, { email, password });
       navigate("/login", { replace: true });
@@ -48,20 +52,16 @@ export default function Signup() {
           <input 
             type="email" 
             placeholder="Email Address" 
-            value={email}
             onChange={(e) => setEmail(e.target.value)} 
             required 
           />
           {error && <p className="error-text">{error}</p>}
-          
           <input 
             type="password" 
             placeholder="Create Password" 
-            value={password}
             onChange={(e) => setPassword(e.target.value)} 
             required 
           />
-          
           <button type="submit" className="login-submit-btn" disabled={loading}>
             {loading ? "PREPARING..." : "GET STARTED"}
           </button>
