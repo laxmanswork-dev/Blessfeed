@@ -1,43 +1,63 @@
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
-import User from "./models/User.js"; // ✅ VERY IMPORTANT PATH
-
-passport.use(
-  new GoogleStrategy(
-    {
-      clientID: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: process.env.GOOGLE_CALLBACK_URL,
-    },
-    async (accessToken, refreshToken, profile, done) => {
-      try {
-        // ✅ safe email extraction
-        const email = profile.emails?.[0]?.value;
-
-        if (!email) {
-          return done(new Error("No email returned from Google"), null);
-        }
-
-        let user = await User.findOne({ email });
-
-        if (!user) {
-          user = await User.create({
-            email,
-            googleId: profile.id,
-          });
-        }
-
-        return done(null, user);
-      } catch (error) {
-        return done(error, null);
-      }
-    }
-  )
-);
+import User from "./models/User.js";
 
 /*
-  Even if you are NOT using sessions,
-  passport requires these methods.
+|--------------------------------------------------------------------------
+| GOOGLE OAUTH (OPTIONAL – SAFE)
+|--------------------------------------------------------------------------
+| This block will ONLY run if Google env variables exist.
+| Prevents server crash during local / API-only development.
+*/
+if (
+  process.env.GOOGLE_CLIENT_ID &&
+  process.env.GOOGLE_CLIENT_SECRET &&
+  process.env.GOOGLE_CALLBACK_URL
+) {
+  passport.use(
+    new GoogleStrategy(
+      {
+        clientID: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        callbackURL: process.env.GOOGLE_CALLBACK_URL,
+      },
+      async (accessToken, refreshToken, profile, done) => {
+        try {
+          const email = profile.emails?.[0]?.value;
+
+          if (!email) {
+            return done(new Error("Google account has no email"), null);
+          }
+
+          let user = await User.findOne({ email });
+
+          if (!user) {
+            user = await User.create({
+              email,
+              googleId: profile.id,
+              authProvider: "google",
+              isVerified: true,
+              lastLoginAt: new Date(),
+            });
+          } else {
+            user.lastLoginAt = new Date();
+            await user.save();
+          }
+
+          return done(null, user);
+        } catch (err) {
+          return done(err, null);
+        }
+      }
+    )
+  );
+}
+
+/*
+|--------------------------------------------------------------------------
+| SERIALIZATION (REQUIRED BY PASSPORT)
+|--------------------------------------------------------------------------
+| Even if you don't use sessions, passport expects these.
 */
 passport.serializeUser((user, done) => {
   done(null, user.id);
@@ -47,8 +67,8 @@ passport.deserializeUser(async (id, done) => {
   try {
     const user = await User.findById(id);
     done(null, user);
-  } catch (error) {
-    done(error, null);
+  } catch (err) {
+    done(err, null);
   }
 });
 

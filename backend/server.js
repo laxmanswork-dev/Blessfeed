@@ -6,8 +6,16 @@ import http from "http";
 import { Server } from "socket.io";
 import passport from "passport";
 
-import "./passport.js";              // 🔥 PASSPORT CONFIG
+import "./passport.js"; // passport config
 import authRoutes from "./routes/auth.js";
+import sessionRoutes from "./routes/session.js";
+
+// 🔗 CONTROLLERS (DB LOGIC)
+import {
+  startSession,
+  updateIntensity,
+  releaseFeed,
+} from "./controllers/session.controller.js";
 
 dotenv.config();
 
@@ -23,10 +31,96 @@ const io = new Server(server, {
   },
 });
 
+/* ================= SOCKET AUTH (JWT) ================= */
+// Client must send token in socket handshake auth
+io.use((socket, next) => {
+  try {
+    const token = socket.handshake.auth?.token;
+    if (!token) return next(new Error("No token"));
+
+    // Passport JWT strategy
+    passport.authenticate("jwt", { session: false }, (err, user) => {
+      if (err || !user) return next(new Error("Unauthorized"));
+      socket.userId = user._id.toString();
+      next();
+    })(socket.request);
+  } catch (e) {
+    next(new Error("Socket auth failed"));
+  }
+});
+
 /* ================= SOCKET EVENTS ================= */
 io.on("connection", (socket) => {
-  console.log("🟢 Socket connected:", socket.id);
+  console.log("🟢 Socket connected:", socket.id, "User:", socket.userId);
 
+  /* --- START SESSION (first resonance touch) --- */
+  socket.on("breathing:start", async (data) => {
+    try {
+      const req = {
+        body: {
+          sessionId: data.sessionId,
+          initialIntensity: data.initialIntensity,
+        },
+        userId: socket.userId,
+      };
+
+      const res = {
+        status: () => res,
+        json: (payload) => socket.emit("session:started", payload),
+      };
+
+      await startSession(req, res);
+    } catch (err) {
+      socket.emit("session:error", { message: err.message });
+    }
+  });
+
+  /* --- UPDATE INTENSITY (slider movement) --- */
+  socket.on("resonance:update", async (data) => {
+    try {
+      const req = {
+        body: {
+          sessionId: data.sessionId,
+          value: data.value,
+        },
+        userId: socket.userId,
+      };
+
+      const res = {
+        status: () => res,
+        json: (payload) => socket.emit("session:updated", payload),
+      };
+
+      await updateIntensity(req, res);
+    } catch (err) {
+      socket.emit("session:error", { message: err.message });
+    }
+  });
+
+  /* --- END SESSION (release feed) --- */
+  socket.on("breathing:stop", async (data) => {
+    try {
+      const req = {
+        body: {
+          sessionId: data.sessionId,
+          text: data.text || "",
+          endIntensity: data.endIntensity,
+        },
+        userId: socket.userId,
+      };
+
+      const res = {
+        status: () => res,
+        json: (payload) => socket.emit("session:released", payload),
+      };
+
+      await releaseFeed(req, res);
+    } catch (err) {
+      socket.emit("session:error", { message: err.message });
+    }
+  });
+
+  /* --- SIMPLE REAL-TIME SYNC (NO DB) --- */
   socket.on("breath:sync", (data) => {
     socket.broadcast.emit("breath:update", data);
   });
@@ -46,7 +140,7 @@ app.use(
 );
 
 app.use(express.json());
-app.use(passport.initialize()); // 🔥 IMPORTANT LINE
+app.use(passport.initialize());
 
 /* ================= HEALTH CHECK ================= */
 app.get("/health", (req, res) => {
@@ -55,6 +149,7 @@ app.get("/health", (req, res) => {
 
 /* ================= ROUTES ================= */
 app.use("/api/auth", authRoutes);
+app.use("/api/session", sessionRoutes);
 
 /* ================= START SERVER ================= */
 const PORT = process.env.PORT || 5000;

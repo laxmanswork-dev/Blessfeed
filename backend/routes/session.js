@@ -1,22 +1,17 @@
 import { Router } from "express";
 import authMiddleware from "../auth_middleware.js";
+import {
+  startSession,
+  updateIntensity,
+  releaseFeed,
+  getWeeklyReflection,
+} from "../controllers/session.controller.js";
 
 const router = Router();
 
-/* PUBLIC */
-router.get("/ping", (req, res) => {
-  res.json({
-    status: "ok",
-    message: "Session route working",
-  });
-});
-
-/* PROTECTED */
-router.get("/secure-test", authMiddleware, (req, res) => {
-  res.json({
-    message: "Protected route working",
-    userId: req.userId,
-  });
-});
+router.post("/start", authMiddleware, startSession);
+router.post("/update", authMiddleware, updateIntensity);
+router.post("/release", authMiddleware, releaseFeed);
+router.get("/weekly", authMiddleware, getWeeklyReflection);
 
 export default router;
