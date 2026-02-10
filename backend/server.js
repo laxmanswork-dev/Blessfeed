@@ -7,7 +7,8 @@ import { Server } from "socket.io";
 import passport from "passport";
 import jwt from "jsonwebtoken";
 
-import "./passport.js";
+import "./passport.js"; // ⚠️ MUST be imported ONCE like this
+
 import authRoutes from "./routes/auth.js";
 import sessionRoutes from "./routes/session.js";
 
@@ -21,13 +22,32 @@ dotenv.config();
 
 const app = express();
 
+/* ================= BASIC MIDDLEWARE ================= */
+app.use(express.json());
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL,
+    credentials: true,
+  })
+);
+app.use(passport.initialize());
+
+/* ================= HEALTH ================= */
+app.get("/health", (req, res) => {
+  res.json({ status: "Backend + Socket OK" });
+});
+
+/* ================= ROUTES (IMPORTANT) ================= */
+app.use("/api/auth", authRoutes);       // ✅ router
+app.use("/api/session", sessionRoutes); // ✅ router
+
 /* ================= HTTP SERVER ================= */
 const server = http.createServer(app);
 
 /* ================= SOCKET SERVER ================= */
 const io = new Server(server, {
   cors: {
-    origin: [process.env.FRONTEND_URL],
+    origin: process.env.FRONTEND_URL,
     methods: ["GET", "POST"],
     credentials: true,
   },
@@ -40,9 +60,7 @@ io.use((socket, next) => {
     if (!token) return next(new Error("No token"));
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    // ✅ FIX HERE
-    socket.userId = decoded.userId;
+    socket.userId = decoded.userId; // ✅ MATCHES auth.js
 
     next();
   } catch (err) {
@@ -126,26 +144,6 @@ io.on("connection", (socket) => {
     console.log("🔴 Socket disconnected:", socket.id);
   });
 });
-
-/* ================= MIDDLEWARE ================= */
-app.use(
-  cors({
-    origin: process.env.FRONTEND_URL,
-    credentials: true,
-  })
-);
-
-app.use(express.json());
-app.use(passport.initialize());
-
-/* ================= HEALTH ================= */
-app.get("/health", (req, res) => {
-  res.json({ status: "Backend + Socket OK" });
-});
-
-/* ================= ROUTES ================= */
-app.use("/api/auth", authRoutes);
-app.use("/api/session", sessionRoutes);
 
 /* ================= START SERVER ================= */
 const PORT = process.env.PORT || 5000;
