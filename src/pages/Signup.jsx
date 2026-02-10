@@ -14,15 +14,14 @@ export default function Signup() {
 
   const handleSignup = async (e) => {
     if (e) e.preventDefault();
-    if (password.length < 6) return setError("Minimum 6 characters required.");
-    
+    if (password.length < 6) return setError("A longer path is required for security.");
     setLoading(true);
     setError("");
     try {
       await axios.post(`${API_URL}/api/auth/register`, { email, password });
       navigate("/login", { replace: true });
     } catch (err) {
-      setError("This email is already registered.");
+      setError("This email has already begun its journey here.");
     } finally {
       setLoading(false);
     }
@@ -40,28 +39,33 @@ export default function Signup() {
           <input 
             type="email" 
             placeholder="Email Address" 
+            value={email}
             onChange={(e) => setEmail(e.target.value)} 
             required 
           />
+          {/* Error attached directly below the input */}
+          {error && <p className="error-text">{error}</p>}
+          
           <input 
             type="password" 
             placeholder="Create Password" 
+            value={password}
             onChange={(e) => setPassword(e.target.value)} 
             required 
           />
-          {error && <p className="error-text">{error}</p>}
+          
           <button type="submit" className="login-submit-btn" disabled={loading}>
-            {loading ? "Preparing Space..." : "Get Started"}
+            {loading ? "PREPARING..." : "GET STARTED"}
           </button>
         </form>
 
-        <div className="divider"><span>Social Connection</span></div>
+        <div className="divider"><span>OR</span></div>
         <button className="google-btn" onClick={() => window.location.href = `${API_URL}/api/auth/google`}>
           Continue with Google
         </button>
 
         <p className="auth-switch">
-          Already a member? <Link to="/login">Sign in</Link>
+          Already a part of the flow? <Link to="/login">Sign in</Link>
         </p>
       </div>
     </div>

@@ -12,9 +12,6 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const savedUser = localStorage.getItem("user");
-  const savedToken = localStorage.getItem("token");
-
   const handleLogin = async (e) => {
     if (e) e.preventDefault();
     setLoading(true);
@@ -25,7 +22,7 @@ export default function Login() {
       localStorage.setItem("user", email);
       navigate("/", { replace: true });
     } catch (err) {
-      setError("Credentials not found. Please try again.");
+      setError("The rhythm seems mismatched. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -39,41 +36,36 @@ export default function Login() {
           <p className="subtitle">A moment for yourself</p>
         </header>
 
-        {savedToken && savedUser && (
-          <div style={{ marginBottom: '24px' }}>
-            <button className="login-submit-btn" onClick={() => navigate("/")}>
-              Continue as {savedUser.split('@')[0]}
-            </button>
-            <div className="divider"><span>or sign in</span></div>
-          </div>
-        )}
-
         <form className="login-form" onSubmit={handleLogin}>
           <input 
             type="email" 
             placeholder="Email Address" 
+            value={email}
             onChange={(e) => setEmail(e.target.value)} 
             required 
           />
+          {error && <p className="error-text">{error}</p>}
+          
           <input 
             type="password" 
             placeholder="Password" 
+            value={password}
             onChange={(e) => setPassword(e.target.value)} 
             required 
           />
-          {error && <p className="error-text">{error}</p>}
+          
           <button type="submit" className="login-submit-btn" disabled={loading}>
-            {loading ? "Aligning..." : "Sign In"}
+            {loading ? "ALIGNING..." : "SIGN IN"}
           </button>
         </form>
 
-        <div className="divider"><span>Social Connection</span></div>
+        <div className="divider"><span>OR</span></div>
         <button className="google-btn" onClick={() => window.location.href = `${API_URL}/api/auth/google`}>
           Continue with Google
         </button>
 
         <p className="auth-switch">
-          New to the flow? <Link to="/signup">Join now</Link>
+          Seeking a new beginning? <Link to="/signup">Join now</Link>
         </p>
       </div>
     </div>
