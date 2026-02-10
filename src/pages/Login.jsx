@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import "./Login.css";
@@ -12,8 +12,18 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Memoize audio to prevent reloading on every render
+  const clickSound = useMemo(() => new Audio("/mnt/data/46268990-alien-robot-246019.mp3"), []);
+  
+  const playClick = () => {
+    clickSound.currentTime = 0;
+    clickSound.volume = 0.4; // Soft premium volume
+    clickSound.play().catch(e => console.log("Sound blocked by browser"));
+  };
+
   const handleLogin = async (e) => {
     if (e) e.preventDefault();
+    playClick(); // Trigger 1: Primary Button
     setLoading(true);
     setError("");
     try {
@@ -60,12 +70,13 @@ export default function Login() {
         </form>
 
         <div className="divider"><span>OR</span></div>
-        <button className="google-btn" onClick={() => window.location.href = `${API_URL}/api/auth/google`}>
+        <button className="google-btn" onClick={() => { playClick(); window.location.href = `${API_URL}/api/auth/google`; }}>
           Continue with Google
         </button>
 
         <p className="auth-switch">
-          Seeking a new beginning? <Link to="/signup">Join now</Link>
+          Seeking a new beginning?{" "}
+          <Link to="/signup" onClick={playClick}>Join now</Link>
         </p>
       </div>
     </div>

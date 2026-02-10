@@ -3,7 +3,7 @@
 :root {
   --accent-glow: #6366f1;
   --glass-empty: rgba(255, 255, 255, 0.04);
-  --glass-filled: rgba(255, 255, 255, 0.12); /* Soft frosted gray emphasis */
+  --glass-filled: rgba(255, 255, 255, 0.12);
   --glass-border: rgba(255, 255, 255, 0.07);
 }
 
@@ -32,7 +32,6 @@
   z-index: 10;
 }
 
-/* Header Sections */
 .login-header {
   margin-bottom: 44px;
   display: flex;
@@ -59,7 +58,7 @@
   text-indent: 0.5em;
 }
 
-/* 1. Input Field Consistency */
+/* 1️⃣ REFINED INPUT FIELDS */
 .login-form {
   display: flex;
   flex-direction: column;
@@ -68,19 +67,20 @@
 
 input {
   width: 100%;
-  padding: 20px 24px;
+  /* High Priority: Increased Vertical (22px) and Left (28px) padding */
+  padding: 22px 28px; 
   background: var(--glass-empty);
   border: 1px solid var(--glass-border);
   border-radius: 18px;
   color: #ffffff;
-  font-size: 14px;
-  line-height: 1;
+  font-size: 15px;
+  /* Optically centers typed text and placeholder */
+  line-height: normal; 
   outline: none;
   box-sizing: border-box;
   transition: background 0.4s ease, border-color 0.3s ease;
 }
 
-/* Filled State Fix: Soft frosted gray emphasis */
 input:not(:placeholder-shown) {
   background: var(--glass-filled);
   border-color: rgba(255, 255, 255, 0.15);
@@ -90,19 +90,16 @@ input::placeholder {
   color: rgba(255, 255, 255, 0.35);
 }
 
-/* 2. Error Message Placement (Directly below input) */
 .error-text {
-  font-size: 10.5px; /* Slightly reduced */
+  font-size: 10.5px;
   color: rgba(255, 95, 95, 0.9);
-  margin-top: -4px; /* Attaches closer to input */
+  margin-top: -4px;
   margin-bottom: 4px;
   text-align: left;
   padding-left: 12px;
-  line-height: 1.5; /* Increased for readability */
-  font-weight: 400;
+  line-height: 1.5;
 }
 
-/* 3. Primary Button Tone */
 .login-submit-btn {
   width: 100%;
   padding: 18px;
@@ -110,21 +107,19 @@ input::placeholder {
   border: none;
   border-radius: 18px;
   color: #000000;
-  font-weight: 500; /* Reduced weight for premium feel */
+  font-weight: 500;
   font-size: 12px;
   text-transform: uppercase;
-  letter-spacing: 0.18em; /* Added subtle spacing */
+  letter-spacing: 0.18em;
   cursor: pointer;
   margin-top: 12px;
-  transition: transform 0.2s ease;
 }
 
-/* 4. Divider Clarity */
 .divider {
   margin: 32px 0;
   display: flex;
   align-items: center;
-  color: rgba(255, 255, 255, 0.25); /* Increased opacity by 10% */
+  color: rgba(255, 255, 255, 0.25);
   font-size: 9px;
   text-transform: uppercase;
   letter-spacing: 0.25em;
@@ -149,12 +144,10 @@ input::placeholder {
   cursor: pointer;
 }
 
-/* 5. Bottom CTA Tone Consistency */
 .auth-switch {
   margin-top: 28px;
   font-size: 12px;
   color: rgba(255, 255, 255, 0.4);
-  letter-spacing: 0.02em;
 }
 
 .auth-switch a {

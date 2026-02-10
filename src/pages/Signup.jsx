@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import "./Login.css";
@@ -12,8 +12,17 @@ export default function Signup() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const clickSound = useMemo(() => new Audio("/mnt/data/46268990-alien-robot-246019.mp3"), []);
+  
+  const playClick = () => {
+    clickSound.currentTime = 0;
+    clickSound.volume = 0.4;
+    clickSound.play().catch(e => console.log("Sound blocked by browser"));
+  };
+
   const handleSignup = async (e) => {
     if (e) e.preventDefault();
+    playClick(); 
     if (password.length < 6) return setError("A longer path is required for security.");
     setLoading(true);
     setError("");
@@ -43,7 +52,6 @@ export default function Signup() {
             onChange={(e) => setEmail(e.target.value)} 
             required 
           />
-          {/* Error attached directly below the input */}
           {error && <p className="error-text">{error}</p>}
           
           <input 
@@ -60,12 +68,13 @@ export default function Signup() {
         </form>
 
         <div className="divider"><span>OR</span></div>
-        <button className="google-btn" onClick={() => window.location.href = `${API_URL}/api/auth/google`}>
+        <button className="google-btn" onClick={() => { playClick(); window.location.href = `${API_URL}/api/auth/google`; }}>
           Continue with Google
         </button>
 
         <p className="auth-switch">
-          Already a part of the flow? <Link to="/login">Sign in</Link>
+          Already a part of the flow?{" "}
+          <Link to="/login" onClick={playClick}>Sign in</Link>
         </p>
       </div>
     </div>
