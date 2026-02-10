@@ -54,7 +54,7 @@ const MoodGraph = ({ history = [] }) => {
   return (
     <div className="w-full flex flex-col items-center min-h-[350px] justify-center px-6 text-center">
       <div className="mb-10">
-        <h2 className="text-2xl font-light text-white mb-2">Weekly Your Reflection</h2>
+        <h2 className="text-2xl font-light text-white mb-2">Weekly Reflection</h2>
         <p className="text-zinc-500 text-[10px] tracking-[0.2em] uppercase font-bold">Your Reflection</p>
       </div>
       <div className="flex items-end justify-between w-full h-40 gap-2 mb-10">
