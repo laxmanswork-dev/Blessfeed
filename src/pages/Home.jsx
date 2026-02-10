@@ -54,7 +54,7 @@ const MoodGraph = ({ history = [] }) => {
   return (
     <div className="w-full flex flex-col items-center min-h-[350px] justify-center px-6 text-center">
       <div className="mb-10">
-        <h2 className="text-2xl font-light text-white mb-2">Weekly Resonance</h2>
+        <h2 className="text-2xl font-light text-white mb-2">Weekly Your Reflection</h2>
         <p className="text-zinc-500 text-[10px] tracking-[0.2em] uppercase font-bold">Your Reflection</p>
       </div>
       <div className="flex items-end justify-between w-full h-40 gap-2 mb-10">
@@ -197,7 +197,6 @@ export default function BlessFeed() {
     }
   };
 
-  // Sync state to storage whenever localHistory changes
   useEffect(() => {
     localStorage.setItem("bless_history", JSON.stringify(localHistory));
   }, [localHistory]);
@@ -268,7 +267,6 @@ export default function BlessFeed() {
     }
     
     const socket = socketRef.current;
-
     const onConnect = () => setIsConnected(true);
     const onDisconnect = () => { setIsConnected(false); setSocketStatus("lost"); };
     const onPresence = (data) => setActiveUsers(data.count ?? 0);
@@ -332,8 +330,6 @@ export default function BlessFeed() {
     if (socketRef.current?.connected) {
       socketRef.current.emit("breathing:stop");
     }
-    
-    // Logic to save the session to history
     const newEntry = {
       id: uuidv4(),
       date: new Date().toISOString(),
@@ -341,7 +337,6 @@ export default function BlessFeed() {
       val: displayIntensity
     };
     setLocalHistory(prev => [newEntry, ...prev].slice(0, 20));
-
     setShowSummary(true);
     setIsBreathing(false);
     setIsPaused(false);
@@ -376,9 +371,9 @@ export default function BlessFeed() {
     ctx.fillStyle = "#FFFFFF"; ctx.font = "bold 40px Arial"; ctx.letterSpacing = "10px"; ctx.textAlign = "center";
     ctx.fillText("BLESSFEED", 400, 100);
     ctx.font = "300 120px Arial"; ctx.fillText(`${displayIntensity}%`, 400, 450);
-    ctx.font = "bold 20px Arial"; ctx.fillStyle = "#666666"; ctx.fillText("RESONANCE DEPTH", 400, 500);
+    ctx.font = "bold 20px Arial"; ctx.fillStyle = "#666666"; ctx.fillText("YOUR REFLECTION", 400, 500);
     ctx.fillStyle = "#FFFFFF"; ctx.font = "300 80px Arial"; ctx.fillText(`${120 - timer}s`, 400, 650);
-    const link = document.createElement('a'); link.download = `resonance.png`; link.href = canvas.toDataURL(); link.click();
+    const link = document.createElement('a'); link.download = 'reflection.png'; link.href = canvas.toDataURL(); link.click();
     playSound("intent");
   };
 
@@ -487,7 +482,7 @@ export default function BlessFeed() {
               <main className="px-6 space-y-4">
                 <AuraCard icon={Activity} title="Rhythm Sync" subtitle={syncStatus} activeColor={currentAuraColor} isSyncIndicator={true} isConnected={isConnected} isBreathing={isBreathing} breathePhase={breathePhase} onClick={() => { playSound("sync", 0.8); setShowSyncInsight(true); if ("vibrate" in navigator) navigator.vibrate(10); }} />
 
-                <AuraCard icon={BarChart3} title="Resonance" subtitle={`${displayIntensity}% Depth`} activeColor={currentAuraColor}>
+                <AuraCard icon={BarChart3} title="Your Reflection" subtitle={`${displayIntensity}%`} activeColor={currentAuraColor}>
                   <div className="mt-6 mb-2 px-1">
                     <input 
                       type="range" min="0" max="100" value={displayIntensity} 
