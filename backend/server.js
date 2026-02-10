@@ -27,8 +27,9 @@ const server = http.createServer(app);
 /* ================= SOCKET SERVER ================= */
 const io = new Server(server, {
   cors: {
-    origin: process.env.FRONTEND_URL,
+    origin: [process.env.FRONTEND_URL],
     methods: ["GET", "POST"],
+    credentials: true,
   },
 });
 
@@ -39,7 +40,9 @@ io.use((socket, next) => {
     if (!token) return next(new Error("No token"));
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    socket.userId = decoded.id;
+
+    // ✅ FIX HERE
+    socket.userId = decoded.userId;
 
     next();
   } catch (err) {
@@ -145,7 +148,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/session", sessionRoutes);
 
 /* ================= START SERVER ================= */
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 5000;
 
 mongoose
   .connect(process.env.MONGO_URI)
