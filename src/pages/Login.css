@@ -16,8 +16,10 @@
   font-family: 'Inter', sans-serif;
   position: relative;
   overflow: hidden;
+  padding: 24px;
 }
 
+/* Glass Card - Desktop Base */
 .login-card {
   width: 100%;
   max-width: 380px;
@@ -29,12 +31,10 @@
   border-radius: 44px;
   text-align: center;
   z-index: 10;
+  box-shadow: 0 50px 100px rgba(0, 0, 0, 0.8);
 }
 
-.login-header {
-  margin-bottom: 44px;
-}
-
+.login-header { margin-bottom: 44px; }
 .brand {
   font-size: 26px;
   font-weight: 300;
@@ -43,7 +43,6 @@
   margin: 0;
   text-indent: 0.4em;
 }
-
 .subtitle {
   font-size: 9px;
   text-transform: uppercase;
@@ -53,38 +52,25 @@
   text-indent: 0.5em;
 }
 
-/* 1️⃣ BUG FIX: INPUT TEXT PADDING & ALIGNMENT */
-.login-form {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
+/* 🛠️ BUG FIX: INPUT PADDING & ALIGNMENT */
+.login-form { display: flex; flex-direction: column; gap: 12px; }
 
 input {
   width: 100%;
-  /* Explicit padding to prevent border touching */
-  padding: 22px 28px !important; 
+  padding: 22px 28px !important; /* Forces breathing space on all sides */
   background: var(--glass-empty);
   border: 1px solid var(--glass-border);
   border-radius: 18px;
   color: #ffffff;
   font-size: 15px;
-  
-  /* Fixed line-height for vertical centering */
-  line-height: 1.2; 
-  box-sizing: border-box; 
+  line-height: 1.2; /* Explicit vertical centering */
+  box-sizing: border-box;
   outline: none;
-  display: block;
   transition: background 0.4s ease;
 }
 
-input:not(:placeholder-shown) {
-  background: var(--glass-filled);
-}
-
-input::placeholder {
-  color: rgba(255, 255, 255, 0.35);
-}
+input:not(:placeholder-shown) { background: var(--glass-filled); }
+input::placeholder { color: rgba(255, 255, 255, 0.35); }
 
 .error-text {
   font-size: 10.5px;
@@ -94,6 +80,7 @@ input::placeholder {
   margin: -4px 0 4px 0;
 }
 
+/* Primary Button */
 .login-submit-btn {
   width: 100%;
   padding: 18px;
@@ -119,11 +106,8 @@ input::placeholder {
 }
 
 .divider::before, .divider::after {
-  content: "";
-  flex: 1;
-  height: 1px;
-  background: rgba(255, 255, 255, 0.06);
-  margin: 0 16px;
+  content: ""; flex: 1; height: 1px;
+  background: rgba(255, 255, 255, 0.06); margin: 0 16px;
 }
 
 .google-btn {
@@ -149,4 +133,26 @@ input::placeholder {
   font-weight: 500;
   margin-left: 6px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* 📱 MOBILE MEDIA QUERIES (Small Screens) */
+@media screen and (max-width: 480px) {
+  .login-card {
+    padding: 38px 28px; /* Compact Card */
+    border-radius: 38px;
+  }
+  .login-header { margin-bottom: 30px; }
+  .brand { font-size: 22px; }
+  
+  input {
+    padding: 18px 22px !important; /* Compact Inputs */
+    font-size: 14px;
+  }
+  .login-submit-btn {
+    padding: 16px;
+    margin-top: 8px;
+  }
+  .divider { margin: 24px 0; }
+  .google-btn { padding: 14px; }
+  .auth-switch { margin-top: 22px; }
 }

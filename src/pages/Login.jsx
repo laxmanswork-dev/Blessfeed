@@ -13,22 +13,22 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // 2️⃣ CLICK SOUND PRELOAD
+  // Preload Interaction Sound
   const [clickAudio] = useState(new Audio(SOUND_PATH));
 
   useEffect(() => {
     clickAudio.load();
-    clickAudio.volume = 0.3; // Low and subtle
+    clickAudio.volume = 0.3;
   }, [clickAudio]);
 
   const playClick = useCallback(() => {
-    clickAudio.currentTime = 0; // Instant reset
-    clickAudio.play().catch(() => {}); // Catch browser block
+    clickAudio.currentTime = 0;
+    clickAudio.play().catch(() => {}); // Prevents errors if sound is blocked
   }, [clickAudio]);
 
   const handleLogin = async (e) => {
     if (e) e.preventDefault();
-    playClick(); // Attached to SIGN IN
+    playClick();
     setLoading(true);
     setError("");
     try {

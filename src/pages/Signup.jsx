@@ -27,7 +27,7 @@ export default function Signup() {
 
   const handleSignup = async (e) => {
     if (e) e.preventDefault();
-    playClick(); // Attached to GET STARTED
+    playClick();
     if (password.length < 6) return setError("A longer path is required for security.");
     setLoading(true);
     try {
