@@ -1,5 +1,5 @@
 import express from "express";
-import authMiddleware from "../auth.middleware.js";
+import { authMiddleware } from "../auth.middleware.js";
 import {
   startSession,
   updateIntensity,
