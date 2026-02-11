@@ -7,12 +7,18 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: process.env.GOOGLE_CALLBACK_URL,
+
+      // 🔥 Hardcoded temporarily to remove env confusion
+      callbackURL: "https://blessfeed-backend.onrender.com/api/auth/google/callback",
     },
+
     async (accessToken, refreshToken, profile, done) => {
       try {
         const email = profile.emails?.[0]?.value;
-        if (!email) return done(new Error("No email"), null);
+
+        if (!email) {
+          return done(new Error("No email received from Google"), null);
+        }
 
         let user = await User.findOne({ email });
 
@@ -26,8 +32,10 @@ passport.use(
         }
 
         return done(null, user);
-      } catch (err) {
-        return done(err, null);
+
+      } catch (error) {
+        console.error("Google OAuth Error:", error);
+        return done(error, null);
       }
     }
   )
