@@ -1,6 +1,18 @@
+import dotenv from "dotenv";
+dotenv.config({ path: "./.env" });
+
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import User from "./models/User.js";
+
+if (
+  !process.env.GOOGLE_CLIENT_ID ||
+  !process.env.GOOGLE_CLIENT_SECRET ||
+  !process.env.GOOGLE_CALLBACK_URL
+) {
+  console.error("❌ Google OAuth ENV variables are missing.");
+  process.exit(1);
+}
 
 passport.use(
   new GoogleStrategy(
@@ -32,16 +44,5 @@ passport.use(
     }
   )
 );
-
-// REQUIRED EVEN WITHOUT SESSIONS
-passport.serializeUser((user, done) => done(null, user.id));
-passport.deserializeUser(async (id, done) => {
-  try {
-    const user = await User.findById(id);
-    done(null, user);
-  } catch (err) {
-    done(err, null);
-  }
-});
 
 export default passport;
