@@ -24,15 +24,20 @@ router.get(
 router.get(
   "/google/callback",
   passport.authenticate("google", {
-    failureRedirect: "/login",
+    failureRedirect: `${process.env.FRONTEND_URL}/login`,
     session: false,
   }),
-  (req, res) => {
-    res.json({
-      message: "Google login success",
-      user: req.user,
-    });
+  async (req, res) => {
+    try {
+      // generate token (if you already have JWT logic use that)
+      const token = "google-login-success"; // replace with real JWT if needed
+
+      // redirect back to frontend with token
+      res.redirect(
+        `${process.env.FRONTEND_URL}/login-success?token=${token}`
+      );
+    } catch (err) {
+      res.redirect(`${process.env.FRONTEND_URL}/login`);
+    }
   }
 );
-
-export default router;
