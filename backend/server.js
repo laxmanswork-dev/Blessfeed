@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-dotenv.config({ path: "./.env" }); // MUST BE FIRST
+dotenv.config();
 
 import express from "express";
 import mongoose from "mongoose";
@@ -14,8 +14,6 @@ import sessionRoutes from "./routes/session.js";
 const app = express();
 const server = http.createServer(app);
 
-/* ---------- MIDDLEWARE ---------- */
-
 app.use(
   cors({
     origin: process.env.FRONTEND_URL,
@@ -26,8 +24,6 @@ app.use(
 app.use(express.json());
 app.use(passport.initialize());
 
-/* ---------- ROUTES ---------- */
-
 app.use("/api/auth", authRoutes);
 app.use("/api/session", sessionRoutes);
 
@@ -35,13 +31,11 @@ app.get("/health", (_, res) => {
   res.json({ status: "ok" });
 });
 
-/* ---------- START SERVER ---------- */
-
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
     server.listen(process.env.PORT || 5000, () => {
-      console.log(`🚀 Server running on port ${process.env.PORT}`);
+      console.log("🚀 Server running");
     });
   })
   .catch((err) => {
