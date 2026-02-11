@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import "./Login.css";
 
-const API_URL = "https://blessfeed-backend.onrender.com";
+const API_URL = import.meta.env.VITE_API_URL;
 const SOUND_PATH = "/mnt/data/46268990-alien-robot-246019.mp3";
 
 export default function Login() {
