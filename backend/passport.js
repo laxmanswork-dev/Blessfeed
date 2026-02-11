@@ -7,34 +7,38 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-
-      // 🔥 Hardcoded temporarily to remove env confusion
-      callbackURL: "https://blessfeed-backend.onrender.com/api/auth/google/callback",
+      callbackURL:
+        "https://blessfeed-backend.onrender.com/api/auth/google/callback",
     },
-
     async (accessToken, refreshToken, profile, done) => {
       try {
         const email = profile.emails?.[0]?.value;
 
         if (!email) {
-          return done(new Error("No email received from Google"), null);
+          return done(new Error("No email from Google"), null);
         }
 
+        // Find existing user
         let user = await User.findOne({ email });
 
+        // Create new user if not exists
         if (!user) {
           user = await User.create({
             email,
             googleId: profile.id,
             authProvider: "google",
             isVerified: true,
+            lastLoginAt: new Date(),
           });
+        } else {
+          // Update login time
+          user.lastLoginAt = new Date();
+          await user.save();
         }
 
         return done(null, user);
-
       } catch (error) {
-        console.error("Google OAuth Error:", error);
+        console.error("Google Strategy Error:", error);
         return done(error, null);
       }
     }
