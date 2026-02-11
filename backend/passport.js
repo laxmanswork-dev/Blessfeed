@@ -7,8 +7,7 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL:
-        "https://blessfeed-backend.onrender.com/api/auth/google/callback",
+      callbackURL: "https://blessfeed-backend.onrender.com/api/auth/google/callback",
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
@@ -25,13 +24,14 @@ passport.use(
             lastLoginAt: new Date(),
           });
         } else {
+          user.googleId = profile.id;
           user.lastLoginAt = new Date();
           await user.save();
         }
 
         return done(null, user);
       } catch (error) {
-        console.error("Google Strategy Error:", error);
+        console.error("Google OAuth Error:", error);
         return done(error, null);
       }
     }
