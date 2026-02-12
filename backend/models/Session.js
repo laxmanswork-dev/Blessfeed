@@ -2,8 +2,16 @@ import mongoose from "mongoose";
 
 const IntensityPointSchema = new mongoose.Schema(
   {
-    value: { type: Number, required: true },
-    at: { type: Date, default: Date.now },
+    value: {
+      type: Number,
+      required: true,
+      min: 0,
+      max: 100,
+    },
+    at: {
+      type: Date,
+      default: Date.now,
+    },
   },
   { _id: false }
 );
@@ -33,19 +41,27 @@ const SessionSchema = new mongoose.Schema(
     initialIntensity: {
       type: Number,
       required: true,
+      min: 0,
+      max: 100,
     },
 
     startIntensity: {
       type: Number,
       required: true,
+      min: 0,
+      max: 100,
     },
 
     lastIntensity: {
       type: Number,
+      min: 0,
+      max: 100,
     },
 
     endIntensity: {
       type: Number,
+      min: 0,
+      max: 100,
     },
 
     intensityTimeline: {
@@ -55,6 +71,8 @@ const SessionSchema = new mongoose.Schema(
 
     releaseScore: {
       type: Number,
+      min: 0,
+      max: 100,
     },
 
     startedAt: {
