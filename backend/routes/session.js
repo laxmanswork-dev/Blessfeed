@@ -1,6 +1,6 @@
 import express from "express";
 import Session from "../models/Session.js";
-import authMiddleware from "../middleware/auth.middleware.js";
+import authMiddleware from "../auth.middleware.js";
 
 const router = express.Router();
 
@@ -28,9 +28,10 @@ router.post("/update", authMiddleware, async (req, res) => {
   try {
     const { sessionId, value } = req.body;
 
-    const session = await Session.findOne({ sessionId });
+    const session = await Session.findOne({ sessionId, user: req.user.id });
 
-    if (!session) return res.status(404).json({ message: "Session not found" });
+    if (!session)
+      return res.status(404).json({ message: "Session not found" });
 
     session.lastIntensity = value;
     session.intensityTimeline.push({ value });
@@ -47,9 +48,10 @@ router.post("/complete", authMiddleware, async (req, res) => {
   try {
     const { sessionId, endIntensity } = req.body;
 
-    const session = await Session.findOne({ sessionId });
+    const session = await Session.findOne({ sessionId, user: req.user.id });
 
-    if (!session) return res.status(404).json({ message: "Session not found" });
+    if (!session)
+      return res.status(404).json({ message: "Session not found" });
 
     session.status = "completed";
     session.endIntensity = endIntensity;
@@ -67,7 +69,7 @@ router.get("/my", authMiddleware, async (req, res) => {
   try {
     const sessions = await Session.find({
       user: req.user.id,
-      status: "completed"
+      status: "completed",
     }).sort({ createdAt: -1 });
 
     res.json(sessions);
