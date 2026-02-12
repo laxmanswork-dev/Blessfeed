@@ -68,13 +68,18 @@ export default function Login() {
 
           {error && <p className="error-text">{error}</p>}
 
-          <button type="submit" disabled={loading}>
+          <button
+            type="submit"
+            className="login-submit-btn"
+            disabled={loading}
+          >
             {loading ? "ALIGNING..." : "SIGN IN"}
           </button>
         </form>
 
         <p className="auth-switch">
-          Seeking a new beginning? <Link to="/signup">Join now</Link>
+          Seeking a new beginning?{" "}
+          <Link to="/signup">Join now</Link>
         </p>
       </div>
     </div>
