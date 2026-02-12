@@ -1,34 +1,78 @@
 import express from "express";
-import jwt from "jsonwebtoken";
 import Session from "../models/Session.js";
+import authMiddleware from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
-const authMiddleware = (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) return res.status(401).json({ message: "No token" });
-
-  const token = authHeader.split(" ")[1];
-
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
-    next();
-  } catch {
-    return res.status(401).json({ message: "Invalid token" });
-  }
-};
-
+/* CREATE SESSION */
 router.post("/create", authMiddleware, async (req, res) => {
   try {
+    const { sessionId, intensity } = req.body;
+
     const session = await Session.create({
-      ...req.body,
+      sessionId,
       user: req.user.id,
+      initialIntensity: intensity,
+      startIntensity: intensity,
+      lastIntensity: intensity,
     });
 
-    res.status(201).json(session);
+    res.json(session);
   } catch (err) {
-    res.status(500).json({ message: "Session create failed" });
+    res.status(500).json({ message: err.message });
+  }
+});
+
+/* UPDATE INTENSITY */
+router.post("/update", authMiddleware, async (req, res) => {
+  try {
+    const { sessionId, value } = req.body;
+
+    const session = await Session.findOne({ sessionId });
+
+    if (!session) return res.status(404).json({ message: "Session not found" });
+
+    session.lastIntensity = value;
+    session.intensityTimeline.push({ value });
+    await session.save();
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+/* COMPLETE SESSION */
+router.post("/complete", authMiddleware, async (req, res) => {
+  try {
+    const { sessionId, endIntensity } = req.body;
+
+    const session = await Session.findOne({ sessionId });
+
+    if (!session) return res.status(404).json({ message: "Session not found" });
+
+    session.status = "completed";
+    session.endIntensity = endIntensity;
+    session.releasedAt = new Date();
+    await session.save();
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+/* GET USER SESSIONS */
+router.get("/my", authMiddleware, async (req, res) => {
+  try {
+    const sessions = await Session.find({
+      user: req.user.id,
+      status: "completed"
+    }).sort({ createdAt: -1 });
+
+    res.json(sessions);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 });
 

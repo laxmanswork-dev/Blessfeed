@@ -30,10 +30,10 @@ const MoodGraph = ({ history = [] }) => {
       d.setDate(now.getDate() - i);
       const dateString = d.toISOString().split("T")[0];
       const dayEntries = Array.isArray(history) 
-        ? history.filter(item => item?.date?.startsWith(dateString))
+        ? history.filter(item => item?.date?.startsWith(dateString) || item?.createdAt?.startsWith(dateString))
         : [];
       const avgVal = dayEntries.length > 0 
-        ? dayEntries.reduce((acc, curr) => acc + (curr.val || 0), 0) / dayEntries.length 
+        ? dayEntries.reduce((acc, curr) => acc + (curr.val || curr.intensity || 0), 0) / dayEntries.length 
         : null;
       days.push({
         label: d.toLocaleDateString("en-US", { weekday: "short" }),
@@ -133,12 +133,8 @@ export default function BlessFeed() {
   }, [navigate]);
 
   const [activeTab, setActiveTab] = useState("home");
-  const [localHistory, setLocalHistory] = useState(() => {
-    try {
-      const saved = localStorage.getItem("bless_history");
-      return saved ? JSON.parse(saved) : [];
-    } catch (e) { return []; }
-  });
+  const [localHistory, setLocalHistory] = useState([]);
+  const [currentSessionId, setCurrentSessionId] = useState(null);
   const [isBreathing, setIsBreathing] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [timer, setTimer] = useState(120);
@@ -198,8 +194,20 @@ export default function BlessFeed() {
   };
 
   useEffect(() => {
-    localStorage.setItem("bless_history", JSON.stringify(localHistory));
-  }, [localHistory]);
+    const loadSessions = async () => {
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/session/my`, {
+          headers: {
+            Authorization: `Bearer ${getToken()}`
+          }
+        });
+        const data = await res.json();
+        setLocalHistory(data);
+      } catch {}
+    };
+
+    loadSessions();
+  }, []);
 
   useEffect(() => {
     if (!isBreathing && activeTab === "home") {
@@ -307,6 +315,29 @@ export default function BlessFeed() {
     };
   }, []);
 
+  /* ---------------- BACKEND SYNC ---------------- */
+  useEffect(() => {
+    if (!isBreathing || !currentSessionId) return;
+
+    const interval = setInterval(async () => {
+      try {
+        await fetch(`${BACKEND_URL}/api/session/update`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${getToken()}`
+          },
+          body: JSON.stringify({
+            sessionId: currentSessionId,
+            value: displayIntensity
+          })
+        });
+      } catch {}
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [displayIntensity, isBreathing, currentSessionId]);
+
   useEffect(() => {
     let interval = null;
     if (isBreathing && !isPaused && timer > 0) interval = setInterval(() => setTimer(p => p - 1), 1000);
@@ -314,29 +345,60 @@ export default function BlessFeed() {
     return () => clearInterval(interval);
   }, [isBreathing, isPaused, timer]);
 
-  const startBreathe = () => {
+  const startBreathe = async () => {
+    const newSessionId = uuidv4();
+    setCurrentSessionId(newSessionId);
+
+    try {
+      await fetch(`${BACKEND_URL}/api/session/create`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getToken()}`
+        },
+        body: JSON.stringify({
+          sessionId: newSessionId,
+          intensity: displayIntensity
+        })
+      });
+    } catch (err) {}
+
     triggerDynamicHaptic(displayIntensity);
     playSound("breathe");
+
     setIsBreathing(true);
     setIsPaused(false);
     setTimer(120);
     setBreathePhase("Inhale...");
+
     if (socketRef.current?.connected) {
-      socketRef.current.emit("breathing:start", { intentMode });
+      socketRef.current.emit("breathing:start", {
+        intentMode,
+        sessionId: newSessionId
+      });
     }
   };
 
-  const stopBreathe = () => {
+  const stopBreathe = async () => {
     if (socketRef.current?.connected) {
       socketRef.current.emit("breathing:stop");
     }
-    const newEntry = {
-      id: uuidv4(),
-      date: new Date().toISOString(),
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      val: displayIntensity
-    };
-    setLocalHistory(prev => [newEntry, ...prev].slice(0, 20));
+
+    try {
+      await fetch(`${BACKEND_URL}/api/session/complete`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getToken()}`
+        },
+        body: JSON.stringify({
+          sessionId: currentSessionId,
+          endIntensity: displayIntensity
+        })
+      });
+    } catch {}
+
+    setCurrentSessionId(null);
     setShowSummary(true);
     setIsBreathing(false);
     setIsPaused(false);
@@ -537,9 +599,9 @@ export default function BlessFeed() {
               <div className="space-y-3">
                 {localHistory.length > 0 ? (
                   localHistory.map((h) => (
-                    <div key={h.id} className="p-5 bg-white/[0.02] border border-white/5 rounded-3xl flex justify-between items-center">
-                      <span className="text-sm text-zinc-400">{h.time}</span>
-                      <span className="text-[10px] font-bold opacity-30 tracking-widest">{h.val}%</span>
+                    <div key={h.id || h._id} className="p-5 bg-white/[0.02] border border-white/5 rounded-3xl flex justify-between items-center">
+                      <span className="text-sm text-zinc-400">{new Date(h.createdAt || h.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                      <span className="text-[10px] font-bold opacity-30 tracking-widest">{h.intensity || h.val}%</span>
                     </div>
                   ))
                 ) : <div className="text-center py-20 text-zinc-600 text-[11px] uppercase tracking-widest">No sessions logged</div>}
