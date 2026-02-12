@@ -27,18 +27,22 @@ const io = new Server(server, {
 app.use(cors());
 app.use(express.json());
 
-/* ---------------- HEALTH CHECK ---------------- */
+/* ---------------- HEALTH ROUTES (RENDER FIX) ---------------- */
 
 app.get("/", (req, res) => {
-  res.send("BlessFeed Backend Running ✅");
+  res.status(200).send("BlessFeed Backend Running ✅");
 });
 
-/* ---------------- ROUTES ---------------- */
+app.get("/health", (req, res) => {
+  res.status(200).send("OK");
+});
+
+/* ---------------- API ROUTES ---------------- */
 
 app.use("/api/auth", authRoutes);
 app.use("/api/session", sessionRoutes);
 
-/* ---------------- MONGO CONNECT (FIXED) ---------------- */
+/* ---------------- MONGO CONNECT ---------------- */
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("Mongo Connected ✅"))
