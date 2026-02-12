@@ -13,45 +13,25 @@ dotenv.config();
 const app = express();
 const server = http.createServer(app);
 
-/* ---------------- SOCKET ---------------- */
-
-const io = new Server(server, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
-  }
-});
-
-/* ---------------- MIDDLEWARE ---------------- */
-
 app.use(cors());
 app.use(express.json());
 
-/* ---------------- HEALTH ROUTES (RENDER FIX) ---------------- */
-
-app.get("/", (req, res) => {
-  res.status(200).send("BlessFeed Backend Running ✅");
-});
-
-app.get("/health", (req, res) => {
-  res.status(200).send("OK");
-});
-
-/* ---------------- API ROUTES ---------------- */
-
+/* ROUTES */
 app.use("/api/auth", authRoutes);
 app.use("/api/session", sessionRoutes);
 
-/* ---------------- MONGO CONNECT ---------------- */
+/* HEALTH CHECK (IMPORTANT FOR RENDER) */
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok" });
+});
 
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("Mongo Connected ✅"))
-  .catch((err) => {
-    console.error("Mongo Error:", err);
-    process.exit(1);
-  });
-
-/* ---------------- SOCKET LOGIC ---------------- */
+/* SOCKET */
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"],
+  },
+});
 
 let activeUsers = 0;
 
@@ -74,15 +54,22 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", () => {
-    activeUsers = Math.max(activeUsers - 1, 0);
+    activeUsers--;
     io.emit("presence:sync", { count: activeUsers });
   });
 });
 
-/* ---------------- START SERVER ---------------- */
-
-const PORT = process.env.PORT || 5000;
-
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT} 🚀`);
-});
+/* MONGO CONNECT */
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => {
+    console.log("Mongo Connected");
+    const PORT = process.env.PORT || 10000;
+    server.listen(PORT, () =>
+      console.log(`Server running on port ${PORT}`)
+    );
+  })
+  .catch((err) => {
+    console.error("Mongo Error:", err);
+    process.exit(1);
+  });

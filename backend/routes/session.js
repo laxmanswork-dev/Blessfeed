@@ -28,7 +28,7 @@ router.post("/update", authMiddleware, async (req, res) => {
   try {
     const { sessionId, value } = req.body;
 
-    const session = await Session.findOne({ sessionId, user: req.user.id });
+    const session = await Session.findOne({ sessionId });
 
     if (!session)
       return res.status(404).json({ message: "Session not found" });
@@ -48,7 +48,7 @@ router.post("/complete", authMiddleware, async (req, res) => {
   try {
     const { sessionId, endIntensity } = req.body;
 
-    const session = await Session.findOne({ sessionId, user: req.user.id });
+    const session = await Session.findOne({ sessionId });
 
     if (!session)
       return res.status(404).json({ message: "Session not found" });
