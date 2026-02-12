@@ -41,15 +41,6 @@ export default function Login() {
     }
   };
 
-  const handleGoogleLogin = () => {
-    if (!API_URL) {
-      setError("API not configured.");
-      return;
-    }
-
-    window.location.href = `${API_URL}/api/auth/google`;
-  };
-
   return (
     <div className="login-bg">
       <div className="login-card">
@@ -81,12 +72,6 @@ export default function Login() {
             {loading ? "ALIGNING..." : "SIGN IN"}
           </button>
         </form>
-
-        <div className="divider"><span>OR</span></div>
-
-        <button className="google-btn" onClick={handleGoogleLogin}>
-          Continue with Google
-        </button>
 
         <p className="auth-switch">
           Seeking a new beginning? <Link to="/signup">Join now</Link>
