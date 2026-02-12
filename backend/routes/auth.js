@@ -1,44 +1,34 @@
-import express from "express";
-import passport from "passport";
-import jwt from "jsonwebtoken";
-
-const router = express.Router();
-
-// Step 1 — Google Login
-router.get(
-  "/google",
-  passport.authenticate("google", {
-    scope: ["profile", "email"],
-  })
-);
-
-// Step 2 — Google Callback
 router.get(
   "/google/callback",
   passport.authenticate("google", { session: false }),
   async (req, res) => {
     try {
-      const user = req.user;
+      console.log("Callback hit");
 
-      if (!user) {
+      if (!req.user) {
+        console.log("No user found");
         return res.status(401).send("User not found");
       }
 
+      if (!process.env.JWT_SECRET) {
+        console.log("JWT_SECRET missing");
+        return res.status(500).send("Server config error");
+      }
+
       const token = jwt.sign(
-        { id: user._id, email: user.email },
+        { id: req.user._id, email: req.user.email },
         process.env.JWT_SECRET,
         { expiresIn: "7d" }
       );
 
-      // Redirect to frontend with token
+      console.log("Token created successfully");
+
       return res.redirect(
         `${process.env.FRONTEND_URL}/auth-success?token=${token}`
       );
     } catch (error) {
-      console.error("Google callback error:", error);
-      return res.status(500).send("Authentication failed");
+      console.error("GOOGLE CALLBACK ERROR:", error);
+      return res.status(500).send("Internal Server Error");
     }
   }
 );
-
-export default router;
