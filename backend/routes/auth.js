@@ -1,50 +1,44 @@
 import express from "express";
 import passport from "passport";
+import jwt from "jsonwebtoken";
 
 const router = express.Router();
 
-/*
-|--------------------------------------------------------------------------
-| GOOGLE LOGIN
-|--------------------------------------------------------------------------
-*/
+// Step 1 — Google Login
 router.get(
   "/google",
   passport.authenticate("google", {
     scope: ["profile", "email"],
-    session: false,
   })
 );
 
-/*
-|--------------------------------------------------------------------------
-| GOOGLE CALLBACK (STABLE VERSION)
-|--------------------------------------------------------------------------
-*/
-router.get("/google/callback", (req, res, next) => {
-  passport.authenticate(
-    "google",
-    { session: false },
-    (err, user, info) => {
-      if (err) {
-        console.error("OAuth error:", err);
-        return res.status(500).send("Authentication failed");
-      }
+// Step 2 — Google Callback
+router.get(
+  "/google/callback",
+  passport.authenticate("google", { session: false }),
+  async (req, res) => {
+    try {
+      const user = req.user;
 
       if (!user) {
-        console.error("No user returned from Google");
-        return res.status(401).send("Authentication failed");
+        return res.status(401).send("User not found");
       }
 
-      try {
-        // SUCCESS → Redirect to frontend
-        return res.redirect("https://blessfeed-1.onrender.com");
-      } catch (error) {
-        console.error("Redirect error:", error);
-        return res.status(500).send("Redirect failed");
-      }
+      const token = jwt.sign(
+        { id: user._id, email: user.email },
+        process.env.JWT_SECRET,
+        { expiresIn: "7d" }
+      );
+
+      // Redirect to frontend with token
+      return res.redirect(
+        `${process.env.FRONTEND_URL}/auth-success?token=${token}`
+      );
+    } catch (error) {
+      console.error("Google callback error:", error);
+      return res.status(500).send("Authentication failed");
     }
-  )(req, res, next);
-});
+  }
+);
 
 export default router;
