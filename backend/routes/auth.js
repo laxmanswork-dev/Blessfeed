@@ -1,34 +1,42 @@
+import express from "express";
+import passport from "passport";
+
+const router = express.Router();
+
+/*
+|--------------------------------------------------------------------------
+| GOOGLE LOGIN
+|--------------------------------------------------------------------------
+*/
+router.get(
+  "/google",
+  passport.authenticate("google", {
+    scope: ["profile", "email"],
+    session: false,
+  })
+);
+
+/*
+|--------------------------------------------------------------------------
+| GOOGLE CALLBACK
+|--------------------------------------------------------------------------
+*/
 router.get(
   "/google/callback",
-  passport.authenticate("google", { session: false }),
-  async (req, res) => {
-    try {
-      console.log("Callback hit");
-
-      if (!req.user) {
-        console.log("No user found");
-        return res.status(401).send("User not found");
+  (req, res, next) => {
+    passport.authenticate("google", { session: false }, (err, user) => {
+      if (err) {
+        console.error("OAuth Error:", err);
+        return res.status(500).send("Authentication failed");
       }
 
-      if (!process.env.JWT_SECRET) {
-        console.log("JWT_SECRET missing");
-        return res.status(500).send("Server config error");
+      if (!user) {
+        return res.status(401).send("Authentication failed");
       }
 
-      const token = jwt.sign(
-        { id: req.user._id, email: req.user.email },
-        process.env.JWT_SECRET,
-        { expiresIn: "7d" }
-      );
-
-      console.log("Token created successfully");
-
-      return res.redirect(
-        `${process.env.FRONTEND_URL}/auth-success?token=${token}`
-      );
-    } catch (error) {
-      console.error("GOOGLE CALLBACK ERROR:", error);
-      return res.status(500).send("Internal Server Error");
-    }
+      return res.redirect(process.env.FRONTEND_URL);
+    })(req, res, next);
   }
 );
+
+export default router;
