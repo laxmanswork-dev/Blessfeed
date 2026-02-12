@@ -12,16 +12,19 @@ passport.use(
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        // SAFELY extract email
-        const email =
-          profile.emails && profile.emails.length > 0
-            ? profile.emails[0].value
-            : null;
+        // ✅ Safely extract and normalize email
+        const rawEmail =
+          profile?.emails?.[0]?.value ||
+          profile?._json?.email ||
+          null;
 
-        if (!email) {
+        if (!rawEmail) {
           return done(new Error("No email returned from Google"), null);
         }
 
+        const email = rawEmail.toLowerCase().trim();
+
+        // ✅ Find user safely
         let user = await User.findOne({ email });
 
         if (!user) {

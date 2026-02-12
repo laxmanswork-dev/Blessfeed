@@ -23,19 +23,13 @@ router.get(
 */
 router.get(
   "/google/callback",
-  (req, res, next) => {
-    passport.authenticate("google", { session: false }, (err, user) => {
-      if (err) {
-        console.error("OAuth Error:", err);
-        return res.status(500).send("Authentication failed");
-      }
-
-      if (!user) {
-        return res.status(401).send("Authentication failed");
-      }
-
-      return res.redirect(process.env.FRONTEND_URL);
-    })(req, res, next);
+  passport.authenticate("google", {
+    session: false,
+    failureRedirect: process.env.FRONTEND_URL,
+  }),
+  (req, res) => {
+    // Successful login → redirect to frontend
+    return res.redirect(process.env.FRONTEND_URL);
   }
 );
 
