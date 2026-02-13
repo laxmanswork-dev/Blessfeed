@@ -51,20 +51,30 @@ const MoodGraph = ({ history = [] }) => {
     return "#f43f5e"; 
   };
 
+  // 🛠️ HEIGHT NORMALIZATION LOGIC
+  const getHeight = (val) => {
+    const maxVal = 100;
+    const minVisualHeight = 8;
+    if (val === null) return minVisualHeight;
+    const normalized = (val / maxVal) * 100;
+    return Math.max(normalized, minVisualHeight);
+  };
+
   return (
     <div className="w-full flex flex-col items-center min-h-[350px] justify-center px-6 text-center">
       <div className="mb-10">
         <h2 className="text-2xl font-light text-white mb-2">Weekly Reflection</h2>
-        <p className="text-zinc-500 text-[10px] tracking-[0.2em] uppercase font-bold">Your Reflection</p>
+        <p className="text-zinc-500 text-[10px] tracking-[0.2em] uppercase font-bold">Resonance History</p>
       </div>
+
       <div className="flex items-end justify-between w-full h-40 gap-2 mb-10">
         {weekData.map((day, i) => (
           <div key={i} className="flex-1 flex flex-col items-center gap-3 h-full justify-end">
             <div className="relative w-full flex justify-center items-end h-full">
               <motion.div
                 initial={{ height: 0 }}
-                animate={{ height: `${day.val === null ? 10 : Math.max(day.val, 10)}%` }}
-                transition={{ type: "spring", damping: 12, stiffness: 100, delay: i * 0.05 }}
+                animate={{ height: `${getHeight(day.val)}%` }}
+                transition={{ type: "spring", damping: 15, stiffness: 100, delay: i * 0.05 }}
                 className="w-full max-w-[28px] rounded-t-lg"
                 style={{ 
                   backgroundColor: getBarColor(day.val),
@@ -75,6 +85,20 @@ const MoodGraph = ({ history = [] }) => {
             <span className={`text-[9px] font-bold uppercase ${day.isToday ? "text-white" : "text-zinc-600"}`}>
               {day.label}
             </span>
+          </div>
+        ))}
+      </div>
+
+      {/* 🟢 COLOR LEGEND */}
+      <div className="flex items-center justify-center gap-6">
+        {[
+          { color: "#22c55e", label: "Calm" },
+          { color: "#6366f1", label: "Steady" },
+          { color: "#f43f5e", label: "Intense" }
+        ].map((item) => (
+          <div key={item.label} className="flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: item.color }} />
+            <span className="text-[8px] font-bold uppercase tracking-widest text-zinc-600">{item.label}</span>
           </div>
         ))}
       </div>
@@ -197,17 +221,14 @@ export default function BlessFeed() {
     const loadSessions = async () => {
       try {
         const res = await fetch(`${BACKEND_URL}/api/session/my`, {
-          headers: {
-            Authorization: `Bearer ${getToken()}`
-          }
+          headers: { Authorization: `Bearer ${getToken()}` }
         });
         const data = await res.json();
         setLocalHistory(data);
       } catch {}
     };
-
     loadSessions();
-  }, []);
+  }, [activeTab]); // Reload when tab changes
 
   useEffect(() => {
     const GLOBAL_VOLUME = 0.3; 
@@ -219,10 +240,7 @@ export default function BlessFeed() {
     });
     return () => {
       Object.values(audioRefs.current).forEach(audio => { 
-        audio.pause(); 
-        audio.currentTime = 0;
-        audio.src = ""; 
-        audio.load();
+        audio.pause(); audio.currentTime = 0; audio.src = ""; audio.load();
       });
     };
   }, []);
@@ -255,16 +273,10 @@ export default function BlessFeed() {
     return () => clearTimeout(timeout);
   }, [isBreathing, isPaused, breathePhase, intentConfig]);
 
-  /* ---------------- SOCKET LOGIC ---------------- */
   useEffect(() => {
     if (!socketRef.current) {
-      socketRef.current = io(BACKEND_URL, {
-        reconnectionAttempts: 5,
-        timeout: 10000,
-        autoConnect: true
-      });
+      socketRef.current = io(BACKEND_URL, { reconnectionAttempts: 5, timeout: 10000, autoConnect: true });
     }
-    
     const socket = socketRef.current;
     const onConnect = () => setIsConnected(true);
     const onDisconnect = () => { setIsConnected(false); setSocketStatus("lost"); };
@@ -272,20 +284,11 @@ export default function BlessFeed() {
     const onSyncStatus = (data) => setSocketStatus(data.status);
     const onBreatheStart = (data) => {
       setIntentMode(data.intentMode || "Steady");
-      setIsBreathing(true);
-      setIsPaused(false);
-      setTimer(120);
-      setBreathePhase("Inhale...");
+      setIsBreathing(true); setIsPaused(false); setTimer(120); setBreathePhase("Inhale...");
       playSound("breathe");
     };
-    const onBreathePause = (pauseState) => {
-      setIsPaused(pauseState);
-      playSound("slider");
-    };
-    const onBreatheStop = () => {
-      setIsBreathing(false);
-      setIsPaused(false);
-    };
+    const onBreathePause = (pauseState) => { setIsPaused(pauseState); playSound("slider"); };
+    const onBreatheStop = () => { setIsBreathing(false); setIsPaused(false); };
 
     socket.on("connect", onConnect);
     socket.on("disconnect", onDisconnect);
@@ -296,36 +299,24 @@ export default function BlessFeed() {
     socket.on("breathing:stopped", onBreatheStop);
 
     return () => {
-      socket.off("connect", onConnect);
-      socket.off("disconnect", onDisconnect);
-      socket.off("presence:sync", onPresence);
-      socket.off("sync:status", onSyncStatus);
-      socket.off("breathing:started", onBreatheStart);
-      socket.off("breathing:paused", onBreathePause);
+      socket.off("connect", onConnect); socket.off("disconnect", onDisconnect);
+      socket.off("presence:sync", onPresence); socket.off("sync:status", onSyncStatus);
+      socket.off("breathing:started", onBreatheStart); socket.off("breathing:paused", onBreathePause);
       socket.off("breathing:stopped", onBreatheStop);
     };
   }, []);
 
-  /* ---------------- BACKEND SYNC ---------------- */
   useEffect(() => {
     if (!isBreathing || !currentSessionId) return;
-
     const interval = setInterval(async () => {
       try {
         await fetch(`${BACKEND_URL}/api/session/update`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${getToken()}`
-          },
-          body: JSON.stringify({
-            sessionId: currentSessionId,
-            value: displayIntensity
-          })
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` },
+          body: JSON.stringify({ sessionId: currentSessionId, value: displayIntensity })
         });
       } catch {}
     }, 5000);
-
     return () => clearInterval(interval);
   }, [displayIntensity, isBreathing, currentSessionId]);
 
@@ -339,87 +330,48 @@ export default function BlessFeed() {
   const startBreathe = async () => {
     const newSessionId = uuidv4();
     setCurrentSessionId(newSessionId);
-
     try {
       await fetch(`${BACKEND_URL}/api/session/create`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${getToken()}`
-        },
-        body: JSON.stringify({
-          sessionId: newSessionId,
-          intensity: displayIntensity
-        })
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` },
+        body: JSON.stringify({ sessionId: newSessionId, intensity: displayIntensity })
       });
     } catch (err) {}
-
-    triggerDynamicHaptic(displayIntensity);
-    playSound("breathe");
-
-    setIsBreathing(true);
-    setIsPaused(false);
-    setTimer(120);
-    setBreathePhase("Inhale...");
-
+    triggerDynamicHaptic(displayIntensity); playSound("breathe");
+    setIsBreathing(true); setIsPaused(false); setTimer(120); setBreathePhase("Inhale...");
     if (socketRef.current?.connected) {
-      socketRef.current.emit("breathing:start", {
-        intentMode,
-        sessionId: newSessionId
-      });
+      socketRef.current.emit("breathing:start", { intentMode, sessionId: newSessionId });
     }
   };
 
   const stopBreathe = async () => {
-    if (socketRef.current?.connected) {
-      socketRef.current.emit("breathing:stop");
-    }
-
+    if (socketRef.current?.connected) socketRef.current.emit("breathing:stop");
     try {
       await fetch(`${BACKEND_URL}/api/session/complete`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${getToken()}`
-        },
-        body: JSON.stringify({
-          sessionId: currentSessionId,
-          endIntensity: displayIntensity
-        })
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` },
+        body: JSON.stringify({ sessionId: currentSessionId, endIntensity: displayIntensity })
       });
     } catch {}
-
-    setCurrentSessionId(null);
-    setShowSummary(true);
-    setIsBreathing(false);
-    setIsPaused(false);
+    setCurrentSessionId(null); setShowSummary(true); setIsBreathing(false); setIsPaused(false);
   };
 
-  const closeSummary = () => {
-    setShowSummary(false);
-    setTimer(120);
-    setBreathePhase("Inhale...");
-    setActiveTab("home");
-  };
+  const closeSummary = () => { setShowSummary(false); setTimer(120); setBreathePhase("Inhale..."); setActiveTab("home"); };
 
   const togglePause = () => {
     playSound("slider");
     const nextPauseState = !isPaused;
     setIsPaused(nextPauseState);
-    if (socketRef.current?.connected) {
-      socketRef.current.emit("breathing:pause", nextPauseState);
-    }
+    if (socketRef.current?.connected) socketRef.current.emit("breathing:pause", nextPauseState);
   };
 
   const exportResonance = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
-    ctx.fillStyle = "#050505";
-    ctx.fillRect(0, 0, 800, 1000);
+    ctx.fillStyle = "#050505"; ctx.fillRect(0, 0, 800, 1000);
     const gradient = ctx.createRadialGradient(400, 300, 50, 400, 300, 400);
-    gradient.addColorStop(0, currentAuraColor);
-    gradient.addColorStop(1, "transparent");
+    gradient.addColorStop(0, currentAuraColor); gradient.addColorStop(1, "transparent");
     ctx.globalAlpha = 0.4; ctx.fillStyle = gradient; ctx.fillRect(0, 0, 800, 1000); ctx.globalAlpha = 1.0;
     ctx.fillStyle = "#FFFFFF"; ctx.font = "bold 40px Arial"; ctx.letterSpacing = "10px"; ctx.textAlign = "center";
     ctx.fillText("BLESSFEED", 400, 100);
@@ -431,30 +383,15 @@ export default function BlessFeed() {
   };
 
   const handleLogout = () => {
-    socketRef.current?.disconnect();
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    navigate("/login", { replace: true });
+    socketRef.current?.disconnect(); localStorage.removeItem("token");
+    localStorage.removeItem("user"); navigate("/login", { replace: true });
   };
 
   return (
     <div className="max-w-[390px] mx-auto min-h-screen bg-black text-white flex flex-col relative overflow-hidden font-sans">
       <style>{`
-        input[type="range"]::-webkit-slider-thumb {
-          -webkit-appearance: none;
-          appearance: none;
-          width: 24px;
-          height: 24px;
-          background: transparent;
-          cursor: pointer;
-        }
-        input[type="range"]::-moz-range-thumb {
-          width: 24px;
-          height: 24px;
-          background: transparent;
-          border: none;
-          cursor: pointer;
-        }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 24px; height: 24px; background: transparent; cursor: pointer; }
+        input[type="range"]::-moz-range-thumb { width: 24px; height: 24px; background: transparent; border: none; cursor: pointer; }
       `}</style>
 
       <canvas ref={canvasRef} width="800" height="1000" className="hidden" />
@@ -554,46 +491,21 @@ export default function BlessFeed() {
                 <AuraCard icon={Activity} title="Rhythm Sync" subtitle={syncStatus} activeColor={currentAuraColor} isSyncIndicator={true} isConnected={isConnected} isBreathing={isBreathing} breathePhase={breathePhase} onClick={() => { playSound("sync", 0.8); setShowSyncInsight(true); if ("vibrate" in navigator) navigator.vibrate(10); }} />
 
                 <AuraCard icon={BarChart3} title="Your Reflection" subtitle={`${displayIntensity}%`} activeColor={currentAuraColor}>
-                  {/* REDESIGNED PREMIUM SLIDER */}
                   <div className="mt-8 mb-4 px-1 relative flex items-center group">
                     <div className="relative w-full h-3 flex items-center">
                       <div className="absolute w-full h-full bg-white/10 rounded-full overflow-hidden">
-                        <motion.div
-                          initial={false}
-                          animate={{ 
-                            width: `${displayIntensity}%`,
-                            backgroundColor: currentAuraColor,
-                            boxShadow: `0 0 20px ${currentAuraColor}cc`
-                          }}
-                          transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                          className="h-full rounded-full"
-                        />
+                        <motion.div initial={false} animate={{ width: `${displayIntensity}%`, backgroundColor: currentAuraColor, boxShadow: `0 0 20px ${currentAuraColor}cc` }} transition={{ type: "spring", damping: 25, stiffness: 200 }} className="h-full rounded-full" />
                       </div>
-                      <input 
-                        type="range" min="0" max="100" value={displayIntensity} 
-                        onChange={(e) => { 
-                          const newVal = parseInt(e.target.value); 
-                          setDisplayIntensity(newVal); 
-                          if (newVal % 5 === 0 && !isBreathing) {
-                            playSound("resonance", 0.8 + (newVal / 250));
-                            triggerDynamicHaptic(newVal);
-                          }
-                        }} 
-                        className="absolute w-full h-6 appearance-none bg-transparent cursor-pointer z-20 outline-none" 
+                      <input type="range" min="0" max="100" value={displayIntensity} onChange={(e) => { 
+                          const newVal = parseInt(e.target.value); setDisplayIntensity(newVal); 
+                          if (newVal % 5 === 0 && !isBreathing) { playSound("resonance", 0.8 + (newVal / 250)); triggerDynamicHaptic(newVal); }
+                        }} className="absolute w-full h-6 appearance-none bg-transparent cursor-pointer z-20 outline-none" 
                       />
-                      <motion.div
-                        pointerEvents="none"
-                        initial={false}
-                        animate={{ left: `calc(${displayIntensity}% - 10px)` }}
-                        transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                        className="absolute w-[20px] h-[20px] bg-white rounded-full z-10 shadow-[0_0_15px_rgba(255,255,255,0.6)] border-[0.5px] border-black/10"
-                      />
+                      <motion.div pointerEvents="none" initial={false} animate={{ left: `calc(${displayIntensity}% - 10px)` }} transition={{ type: "spring", damping: 25, stiffness: 200 }} className="absolute w-[20px] h-[20px] bg-white rounded-full z-10 shadow-[0_0_15px_rgba(255,255,255,0.6)] border-[0.5px] border-black/10" />
                     </div>
                   </div>
                   {!isBreathing && (
-                    <motion.p variants={hintVariants} initial="initial" animate="animate" transition={{ delay: 0.2 }} className="text-[8px] uppercase tracking-widest text-white/40 text-center mt-2">
-                      Slide to tune
-                    </motion.p>
+                    <motion.p variants={hintVariants} initial="initial" animate="animate" transition={{ delay: 0.2 }} className="text-[8px] uppercase tracking-widest text-white/40 text-center mt-2">Slide to tune</motion.p>
                   )}
                 </AuraCard>
                 
@@ -609,32 +521,57 @@ export default function BlessFeed() {
                     )}
                   </AuraCard>
                   <AuraCard icon={Target} title="Focus" subtitle={intentMode} activeColor={currentAuraColor} onClick={() => { playSound("slider"); setShowIntentMenu(true); if ("vibrate" in navigator) navigator.vibrate(10); }}>
-                     {!isBreathing && (
-                        <motion.p variants={hintVariants} initial="initial" animate="animate" transition={{ delay: 0.4 }} className="text-[8px] uppercase tracking-widest text-white/40 text-center mt-auto">
-                          Set your path
-                        </motion.p>
-                     )}
+                      {!isBreathing && (
+                        <motion.p variants={hintVariants} initial="initial" animate="animate" transition={{ delay: 0.4 }} className="text-[8px] uppercase tracking-widest text-white/40 text-center mt-auto">Set your path</motion.p>
+                      )}
                   </AuraCard>
                 </div>
               </main>
             </motion.div>
           )}
 
-          {activeTab === "mood" && <motion.div key="mood" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="pt-24 pb-32"><MoodGraph history={localHistory} /></motion.div>}
+          {activeTab === "mood" && (
+            <motion.div key="mood" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="pt-24 pb-32">
+              <MoodGraph history={localHistory} />
+            </motion.div>
+          )}
           
           {activeTab === "profile" && (
             <motion.div key="profile" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="px-8 pt-24 pb-32 relative">
               <button onClick={handleLogout} className="absolute top-8 right-8 p-2 text-zinc-600 hover:text-red-400 transition-colors"><LogOut size={20} /></button>
-              <h2 className="text-lg font-medium text-center mb-8">Past Sessions</h2>
+              
+              <div className="mb-10 text-center">
+                <h2 className="text-xl font-light mb-1">Session History</h2>
+                <p className="text-[8px] text-zinc-600 font-black uppercase tracking-[0.2em]">Past Resonance</p>
+              </div>
+
               <div className="space-y-3">
                 {localHistory.length > 0 ? (
-                  localHistory.map((h) => (
-                    <div key={h.id || h._id} className="p-5 bg-white/[0.02] border border-white/5 rounded-3xl flex justify-between items-center">
-                      <span className="text-sm text-zinc-400">{new Date(h.createdAt || h.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                      <span className="text-[10px] font-bold opacity-30 tracking-widest">{h.intensity || h.val}%</span>
-                    </div>
-                  ))
-                ) : <div className="text-center py-20 text-zinc-600 text-[11px] uppercase tracking-widest">No sessions logged</div>}
+                  localHistory.map((h) => {
+                    const sessionDate = new Date(h.createdAt || h.date);
+                    const intensity = h.intensity || h.val || 0;
+                    const auraColor = intensity < 35 ? "#22c55e" : intensity < 65 ? "#6366f1" : "#f43f5e";
+
+                    return (
+                      <div key={h.id || h._id} className="p-5 bg-white/[0.02] border border-white/5 rounded-3xl flex justify-between items-center group">
+                        <div className="flex flex-col gap-1">
+                          <span className="text-xs text-white/80 font-medium">
+                            {sessionDate.toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                          </span>
+                          <span className="text-[10px] text-zinc-600 uppercase font-bold tracking-tighter">
+                            {sessionDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: auraColor, boxShadow: `0 0 8px ${auraColor}` }} />
+                          <span className="text-lg font-light tracking-tight text-white/90">{intensity}%</span>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="text-center py-20 text-zinc-600 text-[11px] uppercase tracking-widest font-bold">No sessions logged</div>
+                )}
               </div>
             </motion.div>
           )}
