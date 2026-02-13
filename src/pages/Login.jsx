@@ -8,26 +8,51 @@ const API_URL = import.meta.env.VITE_API_URL;
 export default function Login() {
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [form, setForm] = useState({
+    email: "",
+    password: "",
+  });
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleLogin = async (e) => {
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const validate = () => {
+    if (!form.email.includes("@")) return "Invalid email format";
+    if (form.password.length < 6) return "Password must be 6+ characters";
+    return null;
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setError("");
 
-    try {
-      const res = await axios.post(`${API_URL}/api/auth/login`, {
-        email,
-        password,
-      });
+    const validationError = validate();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
 
-      localStorage.setItem("token", res.data.token);
+    try {
+      setLoading(true);
+
+      const { data } = await axios.post(
+        `${API_URL}/api/auth/login`,
+        form,
+        { timeout: 10000 }
+      );
+
+      localStorage.setItem("token", data.token);
       navigate("/feed");
+
     } catch (err) {
-      setError(err.response?.data?.message || "Login failed");
+      setError(
+        err.response?.data?.message ||
+        "Authentication failed. Please try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -35,35 +60,43 @@ export default function Login() {
 
   return (
     <div className="auth-container">
-      <h1>B L E S S F E E D</h1>
+      <h1 className="brand">BLESSFEED</h1>
 
-      <form onSubmit={handleLogin}>
+      <form onSubmit={handleSubmit} className="auth-form">
         <input
           type="email"
+          name="email"
           placeholder="Email Address"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          value={form.email}
+          onChange={handleChange}
           required
         />
 
         <input
           type="password"
+          name="password"
           placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          value={form.password}
+          onChange={handleChange}
           required
         />
 
-        {error && <p className="error">{error}</p>}
+        {error && <p className="error-text">{error}</p>}
 
-        <button type="submit" disabled={loading}>
+        <button
+          type="submit"
+          disabled={loading}
+          className="primary-btn"
+        >
           {loading ? "Signing In..." : "SIGN IN"}
         </button>
       </form>
 
       <p className="switch-text">
         Seeking a new beginning?
-        <span onClick={() => navigate("/signup")}> Join now</span>
+        <span onClick={() => navigate("/signup")}>
+          {" "}Join now
+        </span>
       </p>
     </div>
   );
