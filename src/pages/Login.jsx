@@ -21,8 +21,8 @@ const Login = () => {
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("userEmail", email);
 
-      // ✅ Correct route
-      navigate("/");
+      // ✅ Directly go to protected page
+      navigate("/home", { replace: true });
 
     } catch (err) {
       alert(err.response?.data?.message || "Login failed");

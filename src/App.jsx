@@ -11,12 +11,12 @@ export default function App() {
   return (
     <Routes>
 
-      {/* PUBLIC ROUTES */}
+      {/* PUBLIC */}
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/login-success" element={<LoginSuccess />} />
 
-      {/* PROTECTED ROUTES */}
+      {/* PROTECTED */}
       <Route
         path="/home"
         element={
@@ -44,18 +44,11 @@ export default function App() {
         }
       />
 
-      {/* DEFAULT ROOT LOGIC */}
-      <Route
-        path="/"
-        element={
-          localStorage.getItem("token")
-            ? <Navigate to="/home" replace />
-            : <Navigate to="/login" replace />
-        }
-      />
+      {/* ROOT */}
+      <Route path="/" element={<Navigate to="/home" replace />} />
 
       {/* FALLBACK */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<Navigate to="/login" replace />} />
 
     </Routes>
   );
