@@ -1,103 +1,82 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import "./Login.css";
 
-const API_URL = import.meta.env.VITE_API_URL;
-
-export default function Login() {
+const Login = () => {
   const navigate = useNavigate();
 
-  const [form, setForm] = useState({
-    email: "",
-    password: "",
-  });
-
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const validate = () => {
-    if (!form.email.includes("@")) return "Invalid email format";
-    if (form.password.length < 6) return "Password must be 6+ characters";
-    return null;
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-
-    const validationError = validate();
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
-
+  const handleLogin = async () => {
     try {
       setLoading(true);
 
-      const { data } = await axios.post(
-        `${API_URL}/api/auth/login`,
-        form,
-        { timeout: 10000 }
+      const res = await axios.post(
+        `${import.meta.env.VITE_API_URL}/api/auth/login`,
+        { email, password }
       );
 
-      localStorage.setItem("token", data.token);
-      navigate("/feed");
+      localStorage.setItem("token", res.data.token);
 
+      navigate("/");
     } catch (err) {
-      setError(
-        err.response?.data?.message ||
-        "Authentication failed. Please try again."
-      );
+      alert(err.response?.data?.message || "Login failed");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="auth-container">
-      <h1 className="brand">BLESSFEED</h1>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#0a0f2c] to-black px-4">
+      <div className="w-full max-w-md bg-black/40 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/10">
 
-      <form onSubmit={handleSubmit} className="auth-form">
+        <h1 className="text-3xl text-center tracking-widest text-white mb-2">
+          BLESSFEED
+        </h1>
+
+        <p className="text-center text-gray-400 text-sm mb-6">
+          A moment for yourself
+        </p>
+
         <input
           type="email"
-          name="email"
           placeholder="Email Address"
-          value={form.email}
-          onChange={handleChange}
-          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="w-full mb-4 px-4 py-3 rounded-xl bg-white/5 text-white border border-white/10 focus:outline-none"
         />
 
         <input
           type="password"
-          name="password"
           placeholder="Password"
-          value={form.password}
-          onChange={handleChange}
-          required
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="w-full mb-6 px-4 py-3 rounded-xl bg-white/5 text-white border border-white/10 focus:outline-none"
         />
 
-        {error && <p className="error-text">{error}</p>}
-
         <button
-          type="submit"
+          onClick={handleLogin}
           disabled={loading}
-          className="primary-btn"
+          className="w-full bg-white text-black font-semibold py-3 rounded-xl hover:opacity-90 transition"
         >
           {loading ? "Signing In..." : "SIGN IN"}
         </button>
-      </form>
 
-      <p className="switch-text">
-        Seeking a new beginning?
-        <span onClick={() => navigate("/signup")}>
-          {" "}Join now
-        </span>
-      </p>
+        <p className="text-sm text-gray-400 mt-4 text-center">
+          Seeking a new beginning?
+          <span
+            className="underline cursor-pointer ml-1 text-white"
+            onClick={() => navigate("/register")}
+          >
+            Join now
+          </span>
+        </p>
+
+      </div>
     </div>
   );
-}
+};
+
+export default Login;
