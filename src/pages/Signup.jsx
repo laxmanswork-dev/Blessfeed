@@ -2,29 +2,59 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
-const API_URL = import.meta.env.VITE_API_URL;
-
 export default function Signup() {
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState({
+    email: "",
+    password: "",
+  });
 
-  const handleSignup = async () => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const API_URL = import.meta.env.VITE_API_URL;
+
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const validate = () => {
+    if (!form.email.includes("@")) return "Invalid email format";
+    if (form.password.length < 6) return "Password must be at least 6 characters";
+    return null;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+
+    const validationError = validate();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
     try {
       setLoading(true);
 
-      const { data } = await axios.post(
+      const res = await axios.post(
         `${API_URL}/api/auth/register`,
-        { email, password }
+        form
       );
 
-      localStorage.setItem("token", data.token);
+      // ✅ Store token + email
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("userEmail", form.email);
 
-      navigate("/");
+      // ✅ Redirect to protected home
+      navigate("/home");
+
     } catch (err) {
-      alert(err.response?.data?.message || "Signup failed");
+      setError(
+        err.response?.data?.message ||
+        "Account creation failed. Try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -42,29 +72,39 @@ export default function Signup() {
           A moment for yourself
         </p>
 
-        <input
-          type="email"
-          placeholder="Email Address"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full mb-4 px-4 py-3 rounded-xl bg-white/5 text-white border border-white/10 focus:outline-none"
-        />
+        <form onSubmit={handleSubmit}>
+          <input
+            type="email"
+            name="email"
+            placeholder="Email Address"
+            value={form.email}
+            onChange={handleChange}
+            className="w-full mb-4 px-4 py-3 rounded-xl bg-white/5 text-white border border-white/10 focus:outline-none"
+            required
+          />
 
-        <input
-          type="password"
-          placeholder="Create Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full mb-6 px-4 py-3 rounded-xl bg-white/5 text-white border border-white/10 focus:outline-none"
-        />
+          <input
+            type="password"
+            name="password"
+            placeholder="Create Password"
+            value={form.password}
+            onChange={handleChange}
+            className="w-full mb-6 px-4 py-3 rounded-xl bg-white/5 text-white border border-white/10 focus:outline-none"
+            required
+          />
 
-        <button
-          onClick={handleSignup}
-          disabled={loading}
-          className="w-full bg-white text-black font-semibold py-3 rounded-xl hover:opacity-90 transition"
-        >
-          {loading ? "Creating Account..." : "GET STARTED"}
-        </button>
+          {error && (
+            <p className="text-red-400 text-sm mb-4">{error}</p>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-white text-black font-semibold py-3 rounded-xl hover:opacity-90 transition"
+          >
+            {loading ? "Creating Account..." : "GET STARTED"}
+          </button>
+        </form>
 
         <p className="text-sm text-gray-400 mt-4 text-center">
           Already a part of the flow?

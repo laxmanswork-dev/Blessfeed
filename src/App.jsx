@@ -10,15 +10,13 @@ import ProtectedRoute from "./components/ProtectedRoute";
 export default function App() {
   return (
     <Routes>
-      {/* ===== DEFAULT REDIRECT ===== */}
-      <Route path="/" element={<Navigate to="/login" replace />} />
 
-      {/* ===== PUBLIC ROUTES ===== */}
+      {/* PUBLIC ROUTES */}
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/login-success" element={<LoginSuccess />} />
 
-      {/* ===== PROTECTED ROUTES ===== */}
+      {/* PROTECTED ROUTES */}
       <Route
         path="/home"
         element={
@@ -46,8 +44,19 @@ export default function App() {
         }
       />
 
-      {/* ===== CATCH ALL ===== */}
-      <Route path="*" element={<Navigate to="/login" replace />} />
+      {/* DEFAULT ROOT LOGIC */}
+      <Route
+        path="/"
+        element={
+          localStorage.getItem("token")
+            ? <Navigate to="/home" replace />
+            : <Navigate to="/login" replace />
+        }
+      />
+
+      {/* FALLBACK */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+
     </Routes>
   );
 }
