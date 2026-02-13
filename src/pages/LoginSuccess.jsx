@@ -11,12 +11,29 @@ export default function LoginSuccess() {
 
     if (token) {
       localStorage.setItem("token", token);
-      if (email) localStorage.setItem("userEmail", email);
-      navigate("/", { replace: true });
+
+      if (email) {
+        localStorage.setItem("userEmail", email);
+      }
+
+      navigate("/", { replace: true }); // ✅ go to protected home
     } else {
-      navigate("/login", { replace: true });
+      navigate("/login", { replace: true }); // fallback safety
     }
   }, [navigate]);
 
-  return <p style={{ color: "white", textAlign: "center" }}>Signing you in…</p>;
+  return (
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "black",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        color: "white"
+      }}
+    >
+      Signing you in…
+    </div>
+  );
 }

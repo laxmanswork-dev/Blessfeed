@@ -4,13 +4,19 @@ import { LogOut, User } from "lucide-react";
 export default function Profile() {
   const navigate = useNavigate();
 
-  const email = localStorage.getItem("userEmail") || "Logged User";
+  const token = localStorage.getItem("token");
+  const email = localStorage.getItem("userEmail");
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("userEmail");
     navigate("/login", { replace: true });
   };
+
+  if (!token) {
+    navigate("/login", { replace: true });
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-black text-white px-6 pt-24 pb-32">
@@ -22,8 +28,12 @@ export default function Profile() {
             <User size={20} />
           </div>
           <div>
-            <p className="text-xs text-zinc-500 uppercase tracking-widest">Signed in as</p>
-            <p className="text-sm font-medium">{email}</p>
+            <p className="text-xs text-zinc-500 uppercase tracking-widest">
+              Signed in as
+            </p>
+            <p className="text-sm font-medium">
+              {email || "Authenticated User"}
+            </p>
           </div>
         </div>
       </div>

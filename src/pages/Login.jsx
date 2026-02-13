@@ -18,9 +18,13 @@ const Login = () => {
         { email, password }
       );
 
+      // ✅ Store authentication data
       localStorage.setItem("token", res.data.token);
+      localStorage.setItem("userEmail", email);
 
-      navigate("/");
+      // ✅ Redirect to protected home
+      navigate("/home");
+
     } catch (err) {
       alert(err.response?.data?.message || "Login failed");
     } finally {
@@ -68,7 +72,7 @@ const Login = () => {
           Seeking a new beginning?
           <span
             className="underline cursor-pointer ml-1 text-white"
-            onClick={() => navigate("/register")}
+            onClick={() => navigate("/signup")}
           >
             Join now
           </span>

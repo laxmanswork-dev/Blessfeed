@@ -45,8 +45,12 @@ export default function Signup() {
         { timeout: 10000 }
       );
 
+      // ✅ Store auth info
       localStorage.setItem("token", data.token);
-      navigate("/feed");
+      localStorage.setItem("userEmail", form.email);
+
+      // ✅ Go to protected home
+      navigate("/home");
 
     } catch (err) {
       setError(
@@ -94,7 +98,10 @@ export default function Signup() {
 
       <p className="switch-text">
         Already a part of the flow?
-        <span onClick={() => navigate("/login")}>
+        <span
+          style={{ cursor: "pointer", textDecoration: "underline" }}
+          onClick={() => navigate("/login")}
+        >
           {" "}Sign in
         </span>
       </p>
