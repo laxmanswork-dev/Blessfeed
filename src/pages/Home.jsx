@@ -51,13 +51,9 @@ const MoodGraph = ({ history = [] }) => {
     return "#f43f5e"; 
   };
 
-  /* Visual Scaling Improvement */
-  const maxVal = 100;
-  const minVisualHeight = 8;
   const getHeight = (val) => {
-    if (val === null) return minVisualHeight;
-    const normalized = (val / maxVal) * 100;
-    return Math.max(normalized, minVisualHeight);
+    if (val === null) return 8;
+    return Math.max((val / 100) * 100, 8);
   };
 
   return (
@@ -136,9 +132,7 @@ export default function BlessFeed() {
   /* 2️⃣ AUTH GUARD */
   useEffect(() => {
     const token = getToken();
-    if (!token) {
-      navigate("/login", { replace: true });
-    }
+    if (!token) navigate("/login", { replace: true });
   }, [navigate]);
 
   const [activeTab, setActiveTab] = useState("home");
@@ -206,26 +200,14 @@ export default function BlessFeed() {
     const loadSessions = async () => {
       try {
         const res = await fetch(`${BACKEND_URL}/api/session/my`, {
-          headers: {
-            Authorization: `Bearer ${getToken()}`
-          }
+          headers: { Authorization: `Bearer ${getToken()}` }
         });
         const data = await res.json();
         setLocalHistory(data);
       } catch {}
     };
-
     loadSessions();
   }, []);
-
-  useEffect(() => {
-    if (!isBreathing && activeTab === "home") {
-      const hapticTimer = setTimeout(() => {
-        if ("vibrate" in navigator) navigator.vibrate([10, 10, 10]);
-      }, 800);
-      return () => clearTimeout(hapticTimer);
-    }
-  }, [isBreathing, activeTab]);
 
   useEffect(() => {
     const GLOBAL_VOLUME = 0.3; 
@@ -237,10 +219,7 @@ export default function BlessFeed() {
     });
     return () => {
       Object.values(audioRefs.current).forEach(audio => { 
-        audio.pause(); 
-        audio.currentTime = 0;
-        audio.src = ""; 
-        audio.load();
+        audio.pause(); audio.currentTime = 0; audio.src = ""; audio.load();
       });
     };
   }, []);
@@ -276,76 +255,56 @@ export default function BlessFeed() {
   /* ---------------- SOCKET LOGIC ---------------- */
   useEffect(() => {
     if (!socketRef.current) {
-      socketRef.current = io(BACKEND_URL, {
-        reconnectionAttempts: 5,
-        timeout: 10000,
-        autoConnect: true
-      });
+      socketRef.current = io(BACKEND_URL, { reconnectionAttempts: 5, timeout: 10000 });
     }
-    
     const socket = socketRef.current;
-    const onConnect = () => setIsConnected(true);
-    const onDisconnect = () => { setIsConnected(false); setSocketStatus("lost"); };
-    const onPresence = (data) => setActiveUsers(data.count ?? 0);
-    const onSyncStatus = (data) => setSocketStatus(data.status);
-    const onBreatheStart = (data) => {
+    socket.on("connect", () => setIsConnected(true));
+    socket.on("disconnect", () => { setIsConnected(false); setSocketStatus("lost"); });
+    socket.on("presence:sync", (data) => setActiveUsers(data.count ?? 0));
+    socket.on("sync:status", (data) => setSocketStatus(data.status));
+    socket.on("breathing:started", (data) => {
       setIntentMode(data.intentMode || "Steady");
-      setIsBreathing(true);
-      setIsPaused(false);
-      setTimer(120);
-      setBreathePhase("Inhale...");
+      setIsBreathing(true); setIsPaused(false); setTimer(120); setBreathePhase("Inhale...");
       playSound("breathe");
-    };
-    const onBreathePause = (pauseState) => {
-      setIsPaused(pauseState);
-      playSound("slider");
-    };
-    const onBreatheStop = () => {
-      setIsBreathing(false);
-      setIsPaused(false);
-    };
-
-    socket.on("connect", onConnect);
-    socket.on("disconnect", onDisconnect);
-    socket.on("presence:sync", onPresence);
-    socket.on("sync:status", onSyncStatus);
-    socket.on("breathing:started", onBreatheStart);
-    socket.on("breathing:paused", onBreathePause);
-    socket.on("breathing:stopped", onBreatheStop);
+    });
+    socket.on("breathing:paused", (s) => { setIsPaused(s); playSound("slider"); });
+    socket.on("breathing:stopped", () => { setIsBreathing(false); setIsPaused(false); });
 
     return () => {
-      socket.off("connect", onConnect);
-      socket.off("disconnect", onDisconnect);
-      socket.off("presence:sync", onPresence);
-      socket.off("sync:status", onSyncStatus);
-      socket.off("breathing:started", onBreatheStart);
-      socket.off("breathing:paused", onBreathePause);
-      socket.off("breathing:stopped", onBreatheStop);
+      socket.off("connect"); socket.off("disconnect"); socket.off("presence:sync");
+      socket.off("sync:status"); socket.off("breathing:started");
+      socket.off("breathing:paused"); socket.off("breathing:stopped");
     };
   }, []);
 
-  /* ---------------- BACKEND SYNC ---------------- */
-  useEffect(() => {
-    if (!isBreathing || !currentSessionId) return;
+  /* ---------------- SESSION LOGIC ---------------- */
+  const startBreathe = async () => {
+    const newSessionId = uuidv4();
+    setCurrentSessionId(newSessionId);
+    try {
+      await fetch(`${BACKEND_URL}/api/session/create`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` },
+        body: JSON.stringify({ sessionId: newSessionId, intensity: displayIntensity })
+      });
+    } catch {}
+    triggerDynamicHaptic(displayIntensity);
+    playSound("breathe");
+    setIsBreathing(true); setIsPaused(false); setTimer(120); setBreathePhase("Inhale...");
+    if (socketRef.current?.connected) socketRef.current.emit("breathing:start", { intentMode, sessionId: newSessionId });
+  };
 
-    const interval = setInterval(async () => {
-      try {
-        await fetch(`${BACKEND_URL}/api/session/update`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${getToken()}`
-          },
-          body: JSON.stringify({
-            sessionId: currentSessionId,
-            value: displayIntensity
-          })
-        });
-      } catch {}
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, [displayIntensity, isBreathing, currentSessionId]);
+  const stopBreathe = async () => {
+    if (socketRef.current?.connected) socketRef.current.emit("breathing:stop");
+    try {
+      await fetch(`${BACKEND_URL}/api/session/complete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` },
+        body: JSON.stringify({ sessionId: currentSessionId, endIntensity: displayIntensity })
+      });
+    } catch {}
+    setCurrentSessionId(null); setShowSummary(true); setIsBreathing(false); setIsPaused(false);
+  };
 
   useEffect(() => {
     let interval = null;
@@ -354,96 +313,23 @@ export default function BlessFeed() {
     return () => clearInterval(interval);
   }, [isBreathing, isPaused, timer]);
 
-  const startBreathe = async () => {
-    const newSessionId = uuidv4();
-    setCurrentSessionId(newSessionId);
-
-    try {
-      await fetch(`${BACKEND_URL}/api/session/create`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${getToken()}`
-        },
-        body: JSON.stringify({
-          sessionId: newSessionId,
-          intensity: displayIntensity
-        })
-      });
-    } catch (err) {}
-
-    triggerDynamicHaptic(displayIntensity);
-    playSound("breathe");
-
-    setIsBreathing(true);
-    setIsPaused(false);
-    setTimer(120);
-    setBreathePhase("Inhale...");
-
-    if (socketRef.current?.connected) {
-      socketRef.current.emit("breathing:start", {
-        intentMode,
-        sessionId: newSessionId
-      });
-    }
-  };
-
-  const stopBreathe = async () => {
-    if (socketRef.current?.connected) {
-      socketRef.current.emit("breathing:stop");
-    }
-
-    try {
-      await fetch(`${BACKEND_URL}/api/session/complete`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${getToken()}`
-        },
-        body: JSON.stringify({
-          sessionId: currentSessionId,
-          endIntensity: displayIntensity
-        })
-      });
-    } catch {}
-
-    setCurrentSessionId(null);
-    setShowSummary(true);
-    setIsBreathing(false);
-    setIsPaused(false);
-  };
-
-  const closeSummary = () => {
-    setShowSummary(false);
-    setTimer(120);
-    setBreathePhase("Inhale...");
-    setActiveTab("home");
-  };
-
   const togglePause = () => {
     playSound("slider");
     const nextPauseState = !isPaused;
     setIsPaused(nextPauseState);
-    if (socketRef.current?.connected) {
-      socketRef.current.emit("breathing:pause", nextPauseState);
-    }
+    if (socketRef.current?.connected) socketRef.current.emit("breathing:pause", nextPauseState);
   };
 
   const exportResonance = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
-    ctx.fillStyle = "#050505";
-    ctx.fillRect(0, 0, 800, 1000);
-    const gradient = ctx.createRadialGradient(400, 300, 50, 400, 300, 400);
-    gradient.addColorStop(0, currentAuraColor);
-    gradient.addColorStop(1, "transparent");
-    ctx.globalAlpha = 0.4; ctx.fillStyle = gradient; ctx.fillRect(0, 0, 800, 1000); ctx.globalAlpha = 1.0;
-    ctx.fillStyle = "#FFFFFF"; ctx.font = "bold 40px Arial"; ctx.letterSpacing = "10px"; ctx.textAlign = "center";
-    ctx.fillText("BLESSFEED", 400, 100);
+    ctx.fillStyle = "#050505"; ctx.fillRect(0, 0, 800, 1000);
+    const g = ctx.createRadialGradient(400, 300, 50, 400, 300, 400);
+    g.addColorStop(0, currentAuraColor); g.addColorStop(1, "transparent");
+    ctx.globalAlpha = 0.4; ctx.fillStyle = g; ctx.fillRect(0, 0, 800, 1000); ctx.globalAlpha = 1.0;
+    ctx.fillStyle = "#FFFFFF"; ctx.font = "bold 40px Arial"; ctx.textAlign = "center"; ctx.fillText("BLESSFEED", 400, 100);
     ctx.font = "300 120px Arial"; ctx.fillText(`${displayIntensity}%`, 400, 450);
-    ctx.font = "bold 20px Arial"; ctx.fillStyle = "#666666"; ctx.fillText("YOUR REFLECTION", 400, 500);
-    ctx.fillStyle = "#FFFFFF"; ctx.font = "300 80px Arial"; ctx.fillText(`${120 - timer}s`, 400, 650);
     const link = document.createElement('a'); link.download = 'reflection.png'; link.href = canvas.toDataURL(); link.click();
     playSound("intent");
   };
@@ -451,7 +337,6 @@ export default function BlessFeed() {
   const handleLogout = () => {
     socketRef.current?.disconnect();
     localStorage.removeItem("token");
-    localStorage.removeItem("user");
     navigate("/login", { replace: true });
   };
 
@@ -479,31 +364,9 @@ export default function BlessFeed() {
                 </div>
                 <div className="space-y-3">
                   <button onClick={exportResonance} className="w-full py-4 rounded-2xl bg-white/5 border border-white/10 text-[10px] font-black uppercase flex items-center justify-center gap-2"><Download size={14} /> Export</button>
-                  <button onClick={closeSummary} className="w-full py-4 rounded-2xl bg-white text-black text-[10px] font-black uppercase">Home</button>
+                  <button onClick={() => { setShowSummary(false); setActiveTab("home"); }} className="w-full py-4 rounded-2xl bg-white text-black text-[10px] font-black uppercase">Home</button>
                 </div>
               </motion.div>
-          </motion.div>
-        )}
-
-        {(showSyncInsight || showIntentMenu) && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-md flex items-center justify-center p-8" onClick={() => { setShowSyncInsight(false); setShowIntentMenu(false); }}>
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-full max-w-[280px] bg-[#0D0D0D] border border-white/10 rounded-[32px] p-8 text-center" onClick={(e) => e.stopPropagation()}>
-              {showSyncInsight ? (
-                <>
-                  <Activity size={32} className="mx-auto mb-6 text-zinc-500" />
-                  <h3 className="text-lg font-light mb-3">Rhythm Sync</h3>
-                  <p className="text-zinc-500 text-[13px] leading-relaxed mb-8">{!isConnected ? "Session flowing locally." : "The orb is reflecting your unique rhythm in real-time."}</p>
-                  <button onClick={() => setShowSyncInsight(false)} className="text-[10px] font-black uppercase text-white/40">Continue</button>
-                </>
-              ) : (
-                <div className="space-y-2">
-                  <Target size={32} className="mx-auto mb-6 text-zinc-500" />
-                  {["Steady", "Release", "Focus"].map((mode) => (
-                    <button key={mode} onClick={() => { setIntentMode(mode); setShowIntentMenu(false); playSound("intent"); if ("vibrate" in navigator) navigator.vibrate(10); }} className={`w-full py-4 rounded-2xl text-[10px] font-black tracking-widest uppercase transition-all ${intentMode === mode ? "bg-white text-black" : "bg-white/5 text-zinc-500"}`}>{mode}</button>
-                  ))}
-                </div>
-              )}
-            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -528,17 +391,28 @@ export default function BlessFeed() {
                 </div>
                 
                 <div className="relative">
-                  <AnimatePresence>
-                    {isBreathing && isConnected && !isPaused && (
-                      <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: [0.1, 0.3, 0.1], scale: [1, 1.2, 1] }} exit={{ opacity: 0 }} transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }} className="absolute inset-0 rounded-full blur-[40px] z-0" style={{ backgroundColor: currentAuraColor }} />
-                    )}
-                  </AnimatePresence>
+                  {/* 🌀 THE ENHANCED FLOATING ORB */}
                   <motion.div 
                     animate={isBreathing && !isPaused 
-                      ? { scale: breathePhase === "Inhale..." ? 1.4 : 1.0, boxShadow: breathePhase === "Inhale..." ? `0 0 100px -10px ${currentAuraColor}` : `0 0 60px -20px ${currentAuraColor}` } 
-                      : { y: [0, -4, 0] }
+                      ? { 
+                          scale: breathePhase === "Inhale..." ? 1.4 : 1.0, 
+                          boxShadow: breathePhase === "Inhale..." 
+                            ? `0 0 100px -10px ${currentAuraColor}` 
+                            : `0 0 60px -20px ${currentAuraColor}` 
+                        } 
+                      : { 
+                          y: [0, -10, 0],
+                          boxShadow: [
+                            `0 0 40px -15px ${currentAuraColor}66`,
+                            `0 0 70px -10px ${currentAuraColor}aa`,
+                            `0 0 40px -15px ${currentAuraColor}66`
+                          ]
+                        }
                     } 
-                    transition={{ duration: isBreathing ? (breathePhase === "Inhale..." ? intentConfig.inhaleMs/1000 : intentConfig.exhaleMs/1000) : 6, ease: "easeInOut", ...intentConfig.physics }} 
+                    transition={isBreathing && !isPaused
+                      ? { duration: (breathePhase === "Inhale..." ? intentConfig.inhaleMs/1000 : intentConfig.exhaleMs/1000), ease: "easeInOut", ...intentConfig.physics }
+                      : { duration: 6, repeat: Infinity, ease: "easeInOut" }
+                    } 
                     className="w-44 h-44 rounded-full border border-white/10 relative z-10" 
                     style={{ background: `radial-gradient(circle at 50% 50%, ${currentAuraColor} 0%, ${currentAuraColor}cc 40%, transparent 100%)` }}
                   />
@@ -551,9 +425,9 @@ export default function BlessFeed() {
               </section>
 
               <main className="px-6 space-y-4">
-                <AuraCard icon={Activity} title="Rhythm Sync" subtitle={syncStatus} activeColor={currentAuraColor} isSyncIndicator={true} isConnected={isConnected} isBreathing={isBreathing} breathePhase={breathePhase} onClick={() => { playSound("sync", 0.8); setShowSyncInsight(true); if ("vibrate" in navigator) navigator.vibrate(10); }} />
+                <AuraCard icon={Activity} title="Rhythm Sync" subtitle={syncStatus} activeColor={currentAuraColor} isSyncIndicator={true} isConnected={isConnected} isBreathing={isBreathing} breathePhase={breathePhase} onClick={() => { playSound("sync", 0.8); setShowSyncInsight(true); }} />
 
-                {/* 🧊 ENHANCED SLIDER UI */}
+                {/* 🧊 THE ENHANCED SLIDER UI */}
                 <AuraCard icon={BarChart3} title="Your Reflection" subtitle={`${displayIntensity}%`} activeColor={currentAuraColor}>
                   <div className="mt-8 mb-4 px-1 relative flex items-center">
                     <input 
@@ -582,41 +456,20 @@ export default function BlessFeed() {
                         [&::-webkit-slider-thumb]:duration-200
                         [&::-webkit-slider-thumb]:ease-in-out
                         [&::-webkit-slider-thumb]:active:scale-125
-                        [&::-webkit-slider-thumb]:hover:scale-110
-                        [&::-moz-range-thumb]:appearance-none 
-                        [&::-moz-range-thumb]:w-[18px] 
-                        [&::-moz-range-thumb]:h-[18px] 
-                        [&::-moz-range-thumb]:rounded-full 
-                        [&::-moz-range-thumb]:bg-white 
-                        [&::-moz-range-thumb]:border-none
-                        [&::-moz-range-thumb]:shadow-[0_0_15px_rgba(255,255,255,0.4)]"
-                      style={{ 
-                        background: `linear-gradient(to right, ${currentAuraColor} ${displayIntensity}%, rgba(255,255,255,0.1) ${displayIntensity}%)`,
-                        filter: `drop-shadow(0 0 8px ${currentAuraColor}44)` 
-                      }} 
+                        [&::-webkit-slider-thumb]:hover:scale-110"
+                      style={{ background: `linear-gradient(to right, ${currentAuraColor} ${displayIntensity}%, rgba(255,255,255,0.1) ${displayIntensity}%)` }} 
                     />
                     <div 
                       className="absolute top-1/2 -translate-y-1/2 pointer-events-none transition-all duration-500 ease-out"
-                      style={{ 
-                        left: `calc(${displayIntensity}% - 9px)`, 
-                        width: '18px', 
-                        height: '18px', 
-                        borderRadius: '50%', 
-                        boxShadow: `0 0 20px 2px ${currentAuraColor}` 
-                      }} 
+                      style={{ left: `calc(${displayIntensity}% - 9px)`, width: '18px', height: '18px', borderRadius: '50%', boxShadow: `0 0 20px 2px ${currentAuraColor}` }} 
                     />
                   </div>
-                  {!isBreathing && (
-                    <motion.p variants={hintVariants} initial="initial" animate="animate" transition={{ delay: 0.2 }} className="text-[8px] uppercase tracking-[0.2em] font-black text-white/40 text-center mt-2">
-                      Slide to tune
-                    </motion.p>
-                  )}
                 </AuraCard>
                 
                 <div className="grid grid-cols-2 gap-4">
                   <AuraCard icon={Wind} title="Breathe" subtitle={isBreathing ? "Active" : `${activeUsers} active`} activeColor={currentAuraColor}>
                     {!isBreathing ? (
-                        <button onClick={startBreathe} className="w-full py-4 mt-8 rounded-2xl bg-white text-black text-[10px] font-black uppercase active:scale-[0.97] transition-transform">BEGIN</button>
+                      <button onClick={startBreathe} className="w-full py-4 mt-8 rounded-2xl bg-white text-black text-[10px] font-black uppercase">BEGIN</button>
                     ) : (
                       <div className="flex gap-2 mt-8">
                         <button onClick={togglePause} className="flex-1 py-4 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">{isPaused ? <Play size={16} fill="currentColor" /> : <Pause size={16} fill="currentColor" />}</button>
@@ -624,58 +477,31 @@ export default function BlessFeed() {
                       </div>
                     )}
                   </AuraCard>
-                  <AuraCard icon={Target} title="Focus" subtitle={intentMode} activeColor={currentAuraColor} onClick={() => { playSound("slider"); setShowIntentMenu(true); if ("vibrate" in navigator) navigator.vibrate(10); }}>
-                     {!isBreathing && (
-                        <motion.p variants={hintVariants} initial="initial" animate="animate" transition={{ delay: 0.4 }} className="text-[8px] uppercase tracking-widest text-white/40 text-center mt-auto">
-                          Set your path
-                        </motion.p>
-                     )}
-                  </AuraCard>
+                  <AuraCard icon={Target} title="Focus" subtitle={intentMode} activeColor={currentAuraColor} onClick={() => setShowIntentMenu(true)} />
                 </div>
               </main>
             </motion.div>
           )}
 
-          {activeTab === "mood" && <motion.div key="mood" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="pt-24 pb-32"><MoodGraph history={localHistory} /></motion.div>}
+          {activeTab === "mood" && <motion.div key="mood" className="pt-24 pb-32"><MoodGraph history={localHistory} /></motion.div>}
           
           {activeTab === "profile" && (
-            <motion.div key="profile" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="px-8 pt-24 pb-32 relative">
-              <button onClick={handleLogout} className="absolute top-8 right-8 p-2 text-zinc-600 hover:text-red-400 transition-colors"><LogOut size={20} /></button>
+            <motion.div key="profile" className="px-8 pt-24 pb-32 relative">
+              <button onClick={handleLogout} className="absolute top-8 right-8 p-2 text-zinc-600"><LogOut size={20} /></button>
               <h2 className="text-lg font-medium text-center mb-8">Past Sessions</h2>
               <div className="space-y-3">
-                {localHistory.length > 0 ? (
-                  localHistory.map((h) => {
-                    const intensityValue = h.endIntensity ?? h.intensity ?? h.val ?? 0;
-                    const dateObj = new Date(h.createdAt || h.date);
-                    
-                    let emotionLabel = "Calm";
-                    let emotionColor = "#22c55e";
-                    if (intensityValue >= 65) { emotionLabel = "Intense"; emotionColor = "#f43f5e"; }
-                    else if (intensityValue >= 35) { emotionLabel = "Steady"; emotionColor = "#6366f1"; }
-
-                    return (
-                      <div key={h.id || h._id} className="p-5 bg-white/[0.02] border border-white/5 rounded-3xl flex justify-between items-center transition-all hover:bg-white/[0.04]">
-                        <div className="flex flex-col gap-1">
-                          <span className="text-[11px] font-bold text-white uppercase tracking-tighter">
-                            {dateObj.toLocaleDateString("en-GB", { day: '2-digit', month: 'short' })}
-                          </span>
-                          <span className="text-[10px] text-zinc-500 font-medium">
-                            {dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-4 text-right">
-                          <div className="flex flex-col">
-                            <span className="text-sm font-light text-white leading-none mb-1">{intensityValue}%</span>
-                            <span className="text-[8px] font-black uppercase tracking-widest" style={{ color: emotionColor }}>
-                              {emotionLabel}
-                            </span>
-                          </div>
-                          <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: emotionColor, boxShadow: `0 0 8px ${emotionColor}88` }} />
-                        </div>
-                      </div>
-                    );
-                  })
-                ) : <div className="text-center py-20 text-zinc-600 text-[11px] uppercase tracking-widest">No sessions logged</div>}
+                {localHistory.map((h) => (
+                  <div key={h._id || h.id} className="p-5 bg-white/[0.02] border border-white/5 rounded-3xl flex justify-between items-center transition-all hover:bg-white/[0.04]">
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[11px] font-bold text-white uppercase">{new Date(h.createdAt).toLocaleDateString("en-GB", { day: '2-digit', month: 'short' })}</span>
+                      <span className="text-[10px] text-zinc-500">{new Date(h.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <span className="text-sm font-light text-white">{h.endIntensity || h.intensity || h.val}%</span>
+                      <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: (h.endIntensity || h.intensity || h.val) < 35 ? "#22c55e" : (h.endIntensity || h.intensity || h.val) < 65 ? "#6366f1" : "#f43f5e" }} />
+                    </div>
+                  </div>
+                ))}
               </div>
             </motion.div>
           )}
@@ -683,9 +509,9 @@ export default function BlessFeed() {
       </div>
 
       <nav className="fixed bottom-8 left-1/2 -translate-x-1/2 px-10 h-16 bg-[#0F0F0F]/90 border border-white/[0.08] rounded-full flex items-center gap-12 backdrop-blur-xl z-[999]">
-        <button onClick={() => { playSound("slider"); setActiveTab("home"); if ("vibrate" in navigator) navigator.vibrate(5); }} className={activeTab === "home" ? "text-white" : "text-zinc-600"}><HomeIcon size={20} /></button>
-        <button onClick={() => { playSound("slider"); setActiveTab("mood"); if ("vibrate" in navigator) navigator.vibrate(5); }} className={activeTab === "mood" ? "text-white" : "text-zinc-600"}><BarChart3 size={20} /></button>
-        <button onClick={() => { playSound("slider"); setActiveTab("profile"); if ("vibrate" in navigator) navigator.vibrate(5); }} className={activeTab === "profile" ? "text-white" : "text-zinc-600"}><User size={20} /></button>
+        <button onClick={() => setActiveTab("home")} className={activeTab === "home" ? "text-white" : "text-zinc-600"}><HomeIcon size={20} /></button>
+        <button onClick={() => setActiveTab("mood")} className={activeTab === "mood" ? "text-white" : "text-zinc-600"}><BarChart3 size={20} /></button>
+        <button onClick={() => setActiveTab("profile")} className={activeTab === "profile" ? "text-white" : "text-zinc-600"}><User size={20} /></button>
       </nav>
     </div>
   );
