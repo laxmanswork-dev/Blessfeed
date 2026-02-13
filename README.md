@@ -1,63 +1,217 @@
-# Blessfeed
+BlessFeed
 
-Blessfeed is a minimal, privacy-first emotional stabilization app built with the MERN stack.
-It helps users pause, regulate emotional intensity, and release mental pressure without accounts, tracking, or stored personal data.
+BlessFeed is a real-time mood and breathing synchronization application built using the MERN stack. The application is designed to provide a focused two-minute guided breathing experience with live presence tracking and session-based reflection.
 
-## Purpose
+The core philosophy of this project is to build fewer features but implement them with strong architecture, real-time communication, and production-level thinking.
 
-The goal of Blessfeed is to create a calm, low-friction space for emotional regulation.
-The app avoids social feeds, notifications, and identity-based features to reduce cognitive load and protect user privacy.
+Live Demo
 
-## How the App Works
+Frontend: https://blessfeed-1.onrender.com
 
-1. Resonance  
-   The user sets their current emotional intensity.
-   This action starts an anonymous session on the backend.
+Backend: https://blessfeed-backend.onrender.com
 
-2. Circle (Real-Time Presence)  
-   Users can tap into a shared pulse using WebSockets.
-   There is no chat or identity — only real-time presence.
-
-3. Feed (Zero-Data Release)  
-   Users can release a thought.
-   The text is processed momentarily on the server and immediately discarded.
-   Only a derived signal is stored, never the content.
-
-4. Breathe  
-   A guided breathing interaction tied to the session state.
-
-## Architecture
+Tech Stack
 
 Frontend:
-- React + Vite
-- Framer Motion for animation
-- Socket.io client for real-time events
+
+React (Vite)
+
+Tailwind CSS
+
+Framer Motion
+
+Socket.IO Client
+
+Axios
 
 Backend:
-- Node.js + Express
-- MongoDB for anonymous session metadata
-- Socket.io for real-time presence
-- REST APIs for session lifecycle
 
-## Why There Is No Authentication
+Node.js
 
-Authentication is intentionally excluded.
-Users can open the app and begin immediately without creating accounts or sharing identity.
+Express.js
 
-Each session is anonymous and short-lived.
-This design prioritizes privacy, simplicity, and intentional UX over feature count.
+MongoDB
 
-## Live Demo
+Mongoose
 
-https://blessfeed-1.onrender.com
+JWT Authentication
 
-(The frontend is deployed as a static site and communicates with a separately deployed Node.js backend API.)
+Socket.IO
+
+Deployment:
+
+Render (Frontend and Backend)
+
+Core Features
+1. Secure Authentication
+
+JWT-based login and registration
+
+Protected routes using custom middleware
+
+Token validation on API requests
+
+Persistent authentication using localStorage
+
+2. Real-Time Presence System
+
+Socket.IO integration
+
+Active user count tracking
+
+Real-time connection status updates
+
+Event-based synchronization between users
+
+3. Breathing Session Engine
+
+Two-minute guided breathing cycle
+
+Inhale and exhale timing logic
+
+Pause and resume functionality
+
+Live broadcast of breathing session state
+
+Session creation and completion tracking
+
+4. Reflection System
+
+Interactive intensity slider
+
+Dynamic UI color adaptation based on mood value
+
+Weekly reflection visualization
+
+Session history stored in MongoDB
+
+Server-side session updates every few seconds
+
+5. Performance-Oriented Design
+
+Optimized re-renders using useMemo
+
+Controlled socket lifecycle management
+
+Structured event cleanup
+
+Minimal unnecessary API calls
+
+Architecture Overview
+
+Frontend:
+
+Component-based architecture
+
+Separation of protected and public routes
+
+Centralized authentication guard
+
+Modular state management inside Home component
+
+Backend:
+
+REST API for authentication and session management
+
+Middleware-based JWT validation
+
+Socket layer for real-time communication
+
+MongoDB schema for storing user sessions and mood values
+
+API Endpoints
+
+Authentication:
+
+POST /api/auth/register
+
+POST /api/auth/login
+
+Session:
+
+POST /api/session/create
+
+POST /api/session/update
+
+POST /api/session/complete
+
+GET /api/session/my
+
+Real-Time Events (Socket.IO)
+
+Client Emits:
+
+breathing:start
+
+breathing:pause
+
+breathing:stop
+
+Server Broadcasts:
+
+presence:sync
+
+sync:status
+
+breathing:started
+
+breathing:paused
+
+breathing:stopped
+
+What This Project Demonstrates
+
+Full MERN stack integration
+
+Real-time event architecture
+
+State synchronization between multiple clients
+
+Authentication flow implementation
+
+Clean UI interaction logic
+
+Backend and frontend deployment handling
+
+Structured component and route management
+
+Future Improvements
+
+Role-based access control
+
+Rate limiting
+
+Production-grade validation (Joi or Zod)
+
+Unit and integration tests
+
+Docker-based deployment
+
+CI/CD pipeline
+
+Installation (Local Setup)
+
+Frontend:
+
+cd vite-project
+npm install
+npm run dev
 
 
-## What This Project Demonstrates
+Backend:
 
-- Full-stack MERN development
-- Clean API and session lifecycle design
-- Real-time systems using WebSockets
-- Privacy-first architecture decisions
-- Product thinking beyond basic CRUD apps
+cd backend
+npm install
+npm run dev
+
+
+Create a .env file in backend:
+
+MONGO_URI=your_mongodb_connection
+JWT_SECRET=your_secret
+
+Project Purpose
+
+This project was built to demonstrate real-time system understanding, secure authentication design, and production-oriented full-stack development thinking as a MERN developer.
+
+It focuses on architecture clarity, state management discipline, and real-time communication rather than feature overload.
