@@ -553,10 +553,14 @@ export default function BlessFeed() {
               <main className="px-6 space-y-4">
                 <AuraCard icon={Activity} title="Rhythm Sync" subtitle={syncStatus} activeColor={currentAuraColor} isSyncIndicator={true} isConnected={isConnected} isBreathing={isBreathing} breathePhase={breathePhase} onClick={() => { playSound("sync", 0.8); setShowSyncInsight(true); if ("vibrate" in navigator) navigator.vibrate(10); }} />
 
+                {/* 🧊 ENHANCED SLIDER UI */}
                 <AuraCard icon={BarChart3} title="Your Reflection" subtitle={`${displayIntensity}%`} activeColor={currentAuraColor}>
-                  <div className="mt-6 mb-2 px-1">
+                  <div className="mt-8 mb-4 px-1 relative flex items-center">
                     <input 
-                      type="range" min="0" max="100" value={displayIntensity} 
+                      type="range" 
+                      min="0" 
+                      max="100" 
+                      value={displayIntensity} 
                       onChange={(e) => { 
                         const newVal = parseInt(e.target.value); 
                         setDisplayIntensity(newVal); 
@@ -565,12 +569,45 @@ export default function BlessFeed() {
                           triggerDynamicHaptic(newVal);
                         }
                       }} 
-                      className="w-full h-[3px] bg-white/10 rounded-full appearance-none accent-white" 
-                      style={{ background: `linear-gradient(to right, ${currentAuraColor} ${displayIntensity}%, rgba(255,255,255,0.1) ${displayIntensity}%)` }} 
+                      className="w-full h-1.5 rounded-full appearance-none cursor-pointer bg-white/10 transition-all duration-300 ease-out accent-transparent relative z-10 
+                        [&::-webkit-slider-runnable-track]:rounded-full 
+                        [&::-webkit-slider-thumb]:appearance-none 
+                        [&::-webkit-slider-thumb]:w-[18px] 
+                        [&::-webkit-slider-thumb]:h-[18px] 
+                        [&::-webkit-slider-thumb]:rounded-full 
+                        [&::-webkit-slider-thumb]:bg-white 
+                        [&::-webkit-slider-thumb]:shadow-[0_0_15px_rgba(255,255,255,0.4)] 
+                        [&::-webkit-slider-thumb]:border-none
+                        [&::-webkit-slider-thumb]:transition-transform 
+                        [&::-webkit-slider-thumb]:duration-200
+                        [&::-webkit-slider-thumb]:ease-in-out
+                        [&::-webkit-slider-thumb]:active:scale-125
+                        [&::-webkit-slider-thumb]:hover:scale-110
+                        [&::-moz-range-thumb]:appearance-none 
+                        [&::-moz-range-thumb]:w-[18px] 
+                        [&::-moz-range-thumb]:h-[18px] 
+                        [&::-moz-range-thumb]:rounded-full 
+                        [&::-moz-range-thumb]:bg-white 
+                        [&::-moz-range-thumb]:border-none
+                        [&::-moz-range-thumb]:shadow-[0_0_15px_rgba(255,255,255,0.4)]"
+                      style={{ 
+                        background: `linear-gradient(to right, ${currentAuraColor} ${displayIntensity}%, rgba(255,255,255,0.1) ${displayIntensity}%)`,
+                        filter: `drop-shadow(0 0 8px ${currentAuraColor}44)` 
+                      }} 
+                    />
+                    <div 
+                      className="absolute top-1/2 -translate-y-1/2 pointer-events-none transition-all duration-500 ease-out"
+                      style={{ 
+                        left: `calc(${displayIntensity}% - 9px)`, 
+                        width: '18px', 
+                        height: '18px', 
+                        borderRadius: '50%', 
+                        boxShadow: `0 0 20px 2px ${currentAuraColor}` 
+                      }} 
                     />
                   </div>
                   {!isBreathing && (
-                    <motion.p variants={hintVariants} initial="initial" animate="animate" transition={{ delay: 0.2 }} className="text-[8px] uppercase tracking-widest text-white/40 text-center mt-2">
+                    <motion.p variants={hintVariants} initial="initial" animate="animate" transition={{ delay: 0.2 }} className="text-[8px] uppercase tracking-[0.2em] font-black text-white/40 text-center mt-2">
                       Slide to tune
                     </motion.p>
                   )}
@@ -608,23 +645,16 @@ export default function BlessFeed() {
               <div className="space-y-3">
                 {localHistory.length > 0 ? (
                   localHistory.map((h) => {
-                    /* Intensity display mapping */
-                    const val = h.endIntensity ?? h.intensity ?? h.val ?? 0;
+                    const intensityValue = h.endIntensity ?? h.intensity ?? h.val ?? 0;
                     const dateObj = new Date(h.createdAt || h.date);
                     
-                    /* Emotional labeling and color logic */
                     let emotionLabel = "Calm";
                     let emotionColor = "#22c55e";
-                    if (val >= 65) {
-                      emotionLabel = "Intense";
-                      emotionColor = "#f43f5e";
-                    } else if (val >= 35) {
-                      emotionLabel = "Steady";
-                      emotionColor = "#6366f1";
-                    }
+                    if (intensityValue >= 65) { emotionLabel = "Intense"; emotionColor = "#f43f5e"; }
+                    else if (intensityValue >= 35) { emotionLabel = "Steady"; emotionColor = "#6366f1"; }
 
                     return (
-                      <div key={h.id || h._id} className="p-5 bg-white/[0.02] border border-white/5 rounded-3xl flex justify-between items-center transition-colors hover:bg-white/[0.04]">
+                      <div key={h.id || h._id} className="p-5 bg-white/[0.02] border border-white/5 rounded-3xl flex justify-between items-center transition-all hover:bg-white/[0.04]">
                         <div className="flex flex-col gap-1">
                           <span className="text-[11px] font-bold text-white uppercase tracking-tighter">
                             {dateObj.toLocaleDateString("en-GB", { day: '2-digit', month: 'short' })}
@@ -635,7 +665,7 @@ export default function BlessFeed() {
                         </div>
                         <div className="flex items-center gap-4 text-right">
                           <div className="flex flex-col">
-                            <span className="text-sm font-light text-white leading-none mb-1">{val}%</span>
+                            <span className="text-sm font-light text-white leading-none mb-1">{intensityValue}%</span>
                             <span className="text-[8px] font-black uppercase tracking-widest" style={{ color: emotionColor }}>
                               {emotionLabel}
                             </span>
@@ -645,9 +675,7 @@ export default function BlessFeed() {
                       </div>
                     );
                   })
-                ) : (
-                  <div className="text-center py-20 text-zinc-600 text-[11px] uppercase tracking-widest">No sessions logged</div>
-                )}
+                ) : <div className="text-center py-20 text-zinc-600 text-[11px] uppercase tracking-widest">No sessions logged</div>}
               </div>
             </motion.div>
           )}
