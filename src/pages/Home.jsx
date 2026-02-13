@@ -210,15 +210,6 @@ export default function BlessFeed() {
   }, []);
 
   useEffect(() => {
-    if (!isBreathing && activeTab === "home") {
-      const hapticTimer = setTimeout(() => {
-        if ("vibrate" in navigator) navigator.vibrate([10, 10, 10]);
-      }, 800);
-      return () => clearTimeout(hapticTimer);
-    }
-  }, [isBreathing, activeTab]);
-
-  useEffect(() => {
     const GLOBAL_VOLUME = 0.3; 
     Object.keys(SOUND_MAP).forEach(key => {
       const audio = new Audio(SOUND_MAP[key]);
@@ -448,6 +439,24 @@ export default function BlessFeed() {
 
   return (
     <div className="max-w-[390px] mx-auto min-h-screen bg-black text-white flex flex-col relative overflow-hidden font-sans">
+      <style>{`
+        input[type="range"]::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 24px;
+          height: 24px;
+          background: transparent;
+          cursor: pointer;
+        }
+        input[type="range"]::-moz-range-thumb {
+          width: 24px;
+          height: 24px;
+          background: transparent;
+          border: none;
+          cursor: pointer;
+        }
+      `}</style>
+
       <canvas ref={canvasRef} width="800" height="1000" className="hidden" />
       <div className="fixed top-0 left-0 w-full h-full pointer-events-none z-0 opacity-20"
         style={{ background: `radial-gradient(circle at 50% 0%, ${currentAuraColor} 0%, transparent 70%)` }} />
@@ -545,20 +554,41 @@ export default function BlessFeed() {
                 <AuraCard icon={Activity} title="Rhythm Sync" subtitle={syncStatus} activeColor={currentAuraColor} isSyncIndicator={true} isConnected={isConnected} isBreathing={isBreathing} breathePhase={breathePhase} onClick={() => { playSound("sync", 0.8); setShowSyncInsight(true); if ("vibrate" in navigator) navigator.vibrate(10); }} />
 
                 <AuraCard icon={BarChart3} title="Your Reflection" subtitle={`${displayIntensity}%`} activeColor={currentAuraColor}>
-                  <div className="mt-6 mb-2 px-1">
-                    <input 
-                      type="range" min="0" max="100" value={displayIntensity} 
-                      onChange={(e) => { 
-                        const newVal = parseInt(e.target.value); 
-                        setDisplayIntensity(newVal); 
-                        if (newVal % 5 === 0 && !isBreathing) {
-                          playSound("resonance", 0.8 + (newVal / 250));
-                          triggerDynamicHaptic(newVal);
-                        }
-                      }} 
-                      className="w-full h-[3px] bg-white/10 rounded-full appearance-none accent-white" 
-                      style={{ background: `linear-gradient(to right, ${currentAuraColor} ${displayIntensity}%, rgba(255,255,255,0.1) ${displayIntensity}%)` }} 
-                    />
+                  {/* REDESIGNED PREMIUM SLIDER */}
+                  <div className="mt-8 mb-4 px-1 relative flex items-center group">
+                    <div className="relative w-full h-3 flex items-center">
+                      <div className="absolute w-full h-full bg-white/10 rounded-full overflow-hidden">
+                        <motion.div
+                          initial={false}
+                          animate={{ 
+                            width: `${displayIntensity}%`,
+                            backgroundColor: currentAuraColor,
+                            boxShadow: `0 0 20px ${currentAuraColor}cc`
+                          }}
+                          transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                          className="h-full rounded-full"
+                        />
+                      </div>
+                      <input 
+                        type="range" min="0" max="100" value={displayIntensity} 
+                        onChange={(e) => { 
+                          const newVal = parseInt(e.target.value); 
+                          setDisplayIntensity(newVal); 
+                          if (newVal % 5 === 0 && !isBreathing) {
+                            playSound("resonance", 0.8 + (newVal / 250));
+                            triggerDynamicHaptic(newVal);
+                          }
+                        }} 
+                        className="absolute w-full h-6 appearance-none bg-transparent cursor-pointer z-20 outline-none" 
+                      />
+                      <motion.div
+                        pointerEvents="none"
+                        initial={false}
+                        animate={{ left: `calc(${displayIntensity}% - 10px)` }}
+                        transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                        className="absolute w-[20px] h-[20px] bg-white rounded-full z-10 shadow-[0_0_15px_rgba(255,255,255,0.6)] border-[0.5px] border-black/10"
+                      />
+                    </div>
                   </div>
                   {!isBreathing && (
                     <motion.p variants={hintVariants} initial="initial" animate="animate" transition={{ delay: 0.2 }} className="text-[8px] uppercase tracking-widest text-white/40 text-center mt-2">
