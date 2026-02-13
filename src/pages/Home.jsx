@@ -30,7 +30,7 @@ const MoodGraph = ({ history = [] }) => {
       d.setDate(now.getDate() - i);
       const dateString = d.toISOString().split("T")[0];
       const dayEntries = Array.isArray(history) 
-        ? history.filter(item => item?.date?.startsWith(dateString) || item?.createdAt?.startsWith(dateString))
+        ? history.filter(item => (item?.date?.startsWith(dateString) || item?.createdAt?.startsWith(dateString)))
         : [];
       const avgVal = dayEntries.length > 0 
         ? dayEntries.reduce((acc, curr) => acc + (curr.val || curr.intensity || 0), 0) / dayEntries.length 
@@ -51,7 +51,6 @@ const MoodGraph = ({ history = [] }) => {
     return "#f43f5e"; 
   };
 
-  // 🛠️ HEIGHT NORMALIZATION LOGIC
   const getHeight = (val) => {
     const maxVal = 100;
     const minVisualHeight = 8;
@@ -89,7 +88,6 @@ const MoodGraph = ({ history = [] }) => {
         ))}
       </div>
 
-      {/* 🟢 COLOR LEGEND */}
       <div className="flex items-center justify-center gap-6">
         {[
           { color: "#22c55e", label: "Calm" },
@@ -224,11 +222,13 @@ export default function BlessFeed() {
           headers: { Authorization: `Bearer ${getToken()}` }
         });
         const data = await res.json();
-        setLocalHistory(data);
-      } catch {}
+        if (Array.isArray(data)) setLocalHistory(data);
+      } catch (err) {
+        console.error("Failed to fetch sessions", err);
+      }
     };
     loadSessions();
-  }, [activeTab]); // Reload when tab changes
+  }, [activeTab]);
 
   useEffect(() => {
     const GLOBAL_VOLUME = 0.3; 
@@ -278,6 +278,7 @@ export default function BlessFeed() {
       socketRef.current = io(BACKEND_URL, { reconnectionAttempts: 5, timeout: 10000, autoConnect: true });
     }
     const socket = socketRef.current;
+    
     const onConnect = () => setIsConnected(true);
     const onDisconnect = () => { setIsConnected(false); setSocketStatus("lost"); };
     const onPresence = (data) => setActiveUsers(data.count ?? 0);
@@ -299,9 +300,12 @@ export default function BlessFeed() {
     socket.on("breathing:stopped", onBreatheStop);
 
     return () => {
-      socket.off("connect", onConnect); socket.off("disconnect", onDisconnect);
-      socket.off("presence:sync", onPresence); socket.off("sync:status", onSyncStatus);
-      socket.off("breathing:started", onBreatheStart); socket.off("breathing:paused", onBreathePause);
+      socket.off("connect", onConnect);
+      socket.off("disconnect", onDisconnect);
+      socket.off("presence:sync", onPresence);
+      socket.off("sync:status", onSyncStatus);
+      socket.off("breathing:started", onBreatheStart);
+      socket.off("breathing:paused", onBreathePause);
       socket.off("breathing:stopped", onBreatheStop);
     };
   }, []);
@@ -315,15 +319,18 @@ export default function BlessFeed() {
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` },
           body: JSON.stringify({ sessionId: currentSessionId, value: displayIntensity })
         });
-      } catch {}
+      } catch (err) {}
     }, 5000);
     return () => clearInterval(interval);
   }, [displayIntensity, isBreathing, currentSessionId]);
 
   useEffect(() => {
     let interval = null;
-    if (isBreathing && !isPaused && timer > 0) interval = setInterval(() => setTimer(p => p - 1), 1000);
-    else if (timer === 0 && isBreathing) stopBreathe();
+    if (isBreathing && !isPaused && timer > 0) {
+      interval = setInterval(() => setTimer(p => p - 1), 1000);
+    } else if (timer === 0 && isBreathing) {
+      stopBreathe();
+    }
     return () => clearInterval(interval);
   }, [isBreathing, isPaused, timer]);
 
@@ -352,7 +359,7 @@ export default function BlessFeed() {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` },
         body: JSON.stringify({ sessionId: currentSessionId, endIntensity: displayIntensity })
       });
-    } catch {}
+    } catch (err) {}
     setCurrentSessionId(null); setShowSummary(true); setIsBreathing(false); setIsPaused(false);
   };
 
@@ -475,7 +482,11 @@ export default function BlessFeed() {
                       ? { scale: breathePhase === "Inhale..." ? 1.4 : 1.0, boxShadow: breathePhase === "Inhale..." ? `0 0 100px -10px ${currentAuraColor}` : `0 0 60px -20px ${currentAuraColor}` } 
                       : { y: [0, -4, 0] }
                     } 
-                    transition={{ duration: isBreathing ? (breathePhase === "Inhale..." ? intentConfig.inhaleMs/1000 : intentConfig.exhaleMs/1000) : 6, ease: "easeInOut", ...intentConfig.physics }} 
+                    transition={{ 
+                      duration: isBreathing ? (breathePhase === "Inhale..." ? intentConfig.inhaleMs/1000 : intentConfig.exhaleMs/1000) : 6, 
+                      ease: isBreathing ? "linear" : "easeInOut", 
+                      ...(!isBreathing && intentConfig.physics) 
+                    }} 
                     className="w-44 h-44 rounded-full border border-white/10 relative z-10" 
                     style={{ background: `radial-gradient(circle at 50% 50%, ${currentAuraColor} 0%, ${currentAuraColor}cc 40%, transparent 100%)` }}
                   />
