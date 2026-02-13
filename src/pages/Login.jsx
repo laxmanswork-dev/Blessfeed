@@ -18,12 +18,11 @@ const Login = () => {
         { email, password }
       );
 
-      // ✅ Store authentication data
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("userEmail", email);
 
-      // ✅ Redirect to protected home
-      navigate("/home");
+      // ✅ Correct route
+      navigate("/");
 
     } catch (err) {
       alert(err.response?.data?.message || "Login failed");
