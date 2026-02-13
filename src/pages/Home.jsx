@@ -20,7 +20,7 @@ const SOUND_MAP = {
   exhale: "https://cdn.freesound.org/previews/95/95275_1540842-lq.mp3"
 };
 
-/* ---------------- 📊 MOOD GRAPH ---------------- */
+/* ---------------- 📊 MOOD GRAPH (IMPROVED) ---------------- */
 const MoodGraph = ({ history = [] }) => {
   const weekData = useMemo(() => {
     const days = [];
@@ -46,8 +46,8 @@ const MoodGraph = ({ history = [] }) => {
 
   const getBarColor = (val) => {
     if (val === null) return "rgba(255, 255, 255, 0.1)";
-    if (val < 35) return "#22c55e"; 
-    if (val < 65) return "#6366f1"; 
+    if (val < 41) return "#22c55e"; 
+    if (val < 71) return "#6366f1"; 
     return "#f43f5e"; 
   };
 
@@ -55,18 +55,19 @@ const MoodGraph = ({ history = [] }) => {
     const maxVal = 100;
     const minVisualHeight = 8;
     if (val === null) return minVisualHeight;
+    // Increased visual scaling by 25%
     const normalized = (val / maxVal) * 100;
-    return Math.max(normalized, minVisualHeight);
+    return Math.min(Math.max(normalized * 1.25, minVisualHeight), 100);
   };
 
   return (
-    <div className="w-full flex flex-col items-center min-h-[350px] justify-center px-6 text-center">
-      <div className="mb-10">
+    <div className="w-full flex flex-col items-center justify-center px-6 text-center">
+      <div className="mb-6">
         <h2 className="text-2xl font-light text-white mb-2">Weekly Reflection</h2>
         <p className="text-zinc-500 text-[10px] tracking-[0.2em] uppercase font-bold">Resonance History</p>
       </div>
 
-      <div className="flex items-end justify-between w-full h-40 gap-2 mb-10">
+      <div className="flex items-end justify-between w-full h-48 gap-2 mb-10 relative">
         {weekData.map((day, i) => (
           <div key={i} className="flex-1 flex flex-col items-center gap-3 h-full justify-end">
             <div className="relative w-full flex justify-center items-end h-full">
@@ -74,14 +75,22 @@ const MoodGraph = ({ history = [] }) => {
                 initial={{ height: 0 }}
                 animate={{ height: `${getHeight(day.val)}%` }}
                 transition={{ type: "spring", damping: 15, stiffness: 100, delay: i * 0.05 }}
-                className="w-full max-w-[28px] rounded-t-lg"
+                className="w-full max-w-[32px] rounded-t-lg relative z-10"
                 style={{ 
                   backgroundColor: getBarColor(day.val),
                   boxShadow: day.val ? `0 0 20px ${getBarColor(day.val)}44` : "none"
                 }}
-              />
+              >
+                {day.isToday && (
+                  <motion.div 
+                    animate={{ opacity: [0.3, 0.6, 0.3] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                    className="absolute inset-0 blur-md rounded-t-lg bg-inherit -z-10"
+                  />
+                )}
+              </motion.div>
             </div>
-            <span className={`text-[9px] font-bold uppercase ${day.isToday ? "text-white" : "text-zinc-600"}`}>
+            <span className={`text-[9px] font-bold uppercase tracking-wider ${day.isToday ? "text-white" : "text-zinc-600"}`}>
               {day.label}
             </span>
           </div>
@@ -556,32 +565,54 @@ export default function BlessFeed() {
                 <p className="text-[8px] text-zinc-600 font-black uppercase tracking-[0.2em]">Past Resonance</p>
               </div>
 
+              {/* ---------------- SESSION HISTORY LIST (IMPROVED) ---------------- */}
               <div className="space-y-3">
                 {localHistory.length > 0 ? (
                   localHistory.map((h) => {
                     const sessionDate = new Date(h.createdAt || h.date);
                     const intensity = h.intensity || h.val || 0;
-                    const auraColor = intensity < 35 ? "#22c55e" : intensity < 65 ? "#6366f1" : "#f43f5e";
+                    
+                    // Dynamic Emotion Determination
+                    let emotionLabel = "Steady";
+                    let auraColor = "#6366f1";
+                    
+                    if (intensity <= 40) {
+                      emotionLabel = "Calm";
+                      auraColor = "#22c55e";
+                    } else if (intensity > 70) {
+                      emotionLabel = "Intense";
+                      auraColor = "#f43f5e";
+                    }
 
                     return (
-                      <div key={h.id || h._id} className="p-5 bg-white/[0.02] border border-white/5 rounded-3xl flex justify-between items-center group">
-                        <div className="flex flex-col gap-1">
-                          <span className="text-xs text-white/80 font-medium">
+                      <div key={h.id || h._id} className="p-5 bg-white/[0.02] border border-white/5 rounded-[24px] flex justify-between items-center group transition-all hover:bg-white/[0.04]">
+                        <div className="flex flex-col gap-1.5">
+                          <span className="text-[13px] text-white/80 font-medium">
                             {sessionDate.toLocaleDateString([], { month: 'short', day: 'numeric' })}
                           </span>
-                          <span className="text-[10px] text-zinc-600 uppercase font-bold tracking-tighter">
+                          <span className="text-[10px] text-zinc-600 uppercase font-bold tracking-tight opacity-60">
                             {sessionDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: auraColor, boxShadow: `0 0 8px ${auraColor}` }} />
-                          <span className="text-lg font-light tracking-tight text-white/90">{intensity}%</span>
+
+                        <div className="flex items-center gap-4">
+                          <div className="text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <span className="text-[14px] font-light text-white">{intensity}%</span>
+                              <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: auraColor }} />
+                            </div>
+                            <p className="text-[9px] font-black uppercase tracking-[0.1em] mt-0.5" style={{ color: auraColor }}>
+                              {emotionLabel}
+                            </p>
+                          </div>
                         </div>
                       </div>
                     );
                   })
                 ) : (
-                  <div className="text-center py-20 text-zinc-600 text-[11px] uppercase tracking-widest font-bold">No sessions logged</div>
+                  <div className="py-20 text-center">
+                    <p className="text-zinc-600 text-[10px] uppercase font-bold tracking-widest">No sessions yet</p>
+                  </div>
                 )}
               </div>
             </motion.div>
@@ -589,10 +620,21 @@ export default function BlessFeed() {
         </AnimatePresence>
       </div>
 
-      <nav className="fixed bottom-8 left-1/2 -translate-x-1/2 px-10 h-16 bg-[#0F0F0F]/90 border border-white/[0.08] rounded-full flex items-center gap-12 backdrop-blur-xl z-[999]">
-        <button onClick={() => { playSound("slider"); setActiveTab("home"); if ("vibrate" in navigator) navigator.vibrate(5); }} className={activeTab === "home" ? "text-white" : "text-zinc-600"}><HomeIcon size={20} /></button>
-        <button onClick={() => { playSound("slider"); setActiveTab("mood"); if ("vibrate" in navigator) navigator.vibrate(5); }} className={activeTab === "mood" ? "text-white" : "text-zinc-600"}><BarChart3 size={20} /></button>
-        <button onClick={() => { playSound("slider"); setActiveTab("profile"); if ("vibrate" in navigator) navigator.vibrate(5); }} className={activeTab === "profile" ? "text-white" : "text-zinc-600"}><User size={20} /></button>
+      <nav className="fixed bottom-0 left-0 w-full z-[100] px-6 pb-8 pt-4">
+        <div className="max-w-[340px] mx-auto bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[32px] p-2 flex justify-between items-center">
+          {[
+            { id: "home", icon: HomeIcon },
+            { id: "mood", icon: BarChart3 },
+            { id: "profile", icon: User }
+          ].map((tab) => (
+            <button key={tab.id} onClick={() => { setActiveTab(tab.id); playSound("slider"); }} className={`relative flex-1 flex flex-col items-center py-3 transition-all duration-500 ${activeTab === tab.id ? "text-white scale-110" : "text-zinc-600 hover:text-zinc-400"}`}>
+              {activeTab === tab.id && (
+                <motion.div layoutId="nav-active" className="absolute inset-0 bg-white/5 rounded-2xl -z-10" transition={{ type: "spring", bounce: 0.2, duration: 0.6 }} />
+              )}
+              <tab.icon size={20} strokeWidth={activeTab === tab.id ? 2 : 1.5} />
+            </button>
+          ))}
+        </div>
       </nav>
     </div>
   );
